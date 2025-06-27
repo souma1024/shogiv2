@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>shogiv2</title>
+</head>
+<body>
+    <h1>Hello World</h1>
+    <button id="openModalBtn">ルーム作成</button>
+
+
+
+    <div>
+        <h3>ルーム参加</h3>
+        <form th:action="@{/games}" method="post">
+            <input type="text">
+            <button type="submit">送信</button>
+        </form>
+    </div>
+</body>
+</html>
