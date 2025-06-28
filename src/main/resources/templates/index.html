@@ -5,31 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/modal.css">
     <script src="/js/modal.js" defer></script>
-    <title>shogiv2</title>
+    <title th:text="#{header.top_title}"></title>
 </head>
 <body>
-    <h1>将棋対戦（二人用）</h1>
-    <button id="openModalBtn">ルーム作成</button>
+    <h1 th:text="#{top.title}"></h1>
+    <button id="openModalBtn" th:text="#{top.room_create}"></button>
     <!-- モーダル本体 -->
     <div id="modal" class="modal hidden">
         <div class="modal-content">
             <span class="close-button" id="closeModalBtn">&times;</span>
-            <h2>ルーム作成</h2>
-            <h3>あなたのルームID: <strong>5rz8tq</strong></h3>
+            <h2 th:text="#{top.room_create}"></h2>
+            <h3 th:text="#{roomID_text}"><strong>5rz8tq</strong></h3>
             <form id="createRoomForm">
-                <label>持ち時間（分）:</label>
+                <label th:text="#{timelimit_text}"></label>
                 <input type="number" name="timeLimit" min="5" max="360" step="5" required> <!--将来的にはプルダウン-->
-                <button type="submit">作成</button>
+                <button th:text="#{button.creation}" type="submit"></button>
             </form>
         </div>
     </div>
 
 
     <div>
-        <h3>ルーム参加</h3>
+        <h3 th:text="#{top.room_join_text}"></h3>
         <form th:action="@{/games}" method="post">
             <input type="text">
-            <button type="submit">送信</button>
+            <button th:text="#{button.submit}" type="submit"></button>
         </form>
     </div>
 </body>

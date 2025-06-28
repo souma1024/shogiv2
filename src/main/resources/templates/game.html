@@ -3,21 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ゲーム開始</title>
+    <title th:text="#{header.game_title}"></title>
     <link rel="stylesheet" href="/css/game.css"/>
     <script src="/js/game-layout.js" defer></script>
 </head>
 <body>
 
 <div class="game-screen">
-    <h2>将棋 対局画面</h2>
+    <h2 th:text="#{game.title}"></h2>
 
     <!-- 操作ボタン -->
     <div class="top-buttons" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-        <button style="background: orange; border-radius: 50%; padding: 10px;">後手</button>
+        <button th:text="#{game.order_second}" style="background: orange; border-radius: 50%; padding: 10px;"></button>
 
         <form th:action="@{/review}" method="get" style="margin: 0;"></form>
-            <button type="submit" style="background: #66ccff; border-radius: 50%; padding: 10px;">終了</button>
+            <button th:text="#{game.surrender}" type="submit" style="background: #66ccff; border-radius: 50%; padding: 10px;"></button>
         </form>
     </div>
 
@@ -28,8 +28,8 @@
 
     <!-- 下部情報 -->
     <div class="bottom-info">
-        <button class="time-limit">持ち時間</button>
-        <button class="sente">先手</button>
+        <button th:text="#{game.timelimit_left}" class="time-limit"></button>
+        <button th:text="#{game.order_first}" class="sente"></button>
     </div>
 </div>
 
