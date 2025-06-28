@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ゲーム開始</title>
+    <link rel="stylesheet" href="/css/game.css"/>
+    <script src="/js/game-layout.js" defer></script>
+</head>
+<body>
+
+<div class="game-screen">
+    <h2>将棋 対局画面</h2>
+
+    <!-- 操作ボタン -->
+    <div class="top-buttons" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <button style="background: orange; border-radius: 50%; padding: 10px;">後手</button>
+
+        <form th:action="@{/review}" method="get" style="margin: 0;"></form>
+            <button type="submit" style="background: #66ccff; border-radius: 50%; padding: 10px;">終了</button>
+        </form>
+    </div>
+
+    <!-- 将棋盤 -->
+    <div class="board" id="shogiBoard">
+    
+    </div>
+
+    <!-- 下部情報 -->
+    <div class="bottom-info">
+        <button class="time-limit">持ち時間</button>
+        <button class="sente">先手</button>
+    </div>
+</div>
+
+</body>
+</html>

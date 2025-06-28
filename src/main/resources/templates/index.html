@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/modal.css">
+    <script src="/js/modal.js" defer></script>
+    <title>shogiv2</title>
+</head>
+<body>
+    <h1>将棋対戦（二人用）</h1>
+    <button id="openModalBtn">ルーム作成</button>
+    <!-- モーダル本体 -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-button" id="closeModalBtn">&times;</span>
+            <h2>ルーム作成</h2>
+            <h3>あなたのルームID: <strong>5rz8tq</strong></h3>
+            <form id="createRoomForm">
+                <label>持ち時間（分）:</label>
+                <input type="number" name="timeLimit" min="5" max="360" step="5" required> <!--将来的にはプルダウン-->
+                <button type="submit">作成</button>
+            </form>
+        </div>
+    </div>
+
+
+    <div>
+        <h3>ルーム参加</h3>
+        <form th:action="@{/games}" method="post">
+            <input type="text">
+            <button type="submit">送信</button>
+        </form>
+    </div>
+</body>
+</html>
