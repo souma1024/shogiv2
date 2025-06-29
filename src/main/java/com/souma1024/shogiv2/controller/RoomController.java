@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.souma1024.shogiv2.dto.CreateRoomRequest;
 import com.souma1024.shogiv2.dto.CreateRoomResponse;
+import com.souma1024.shogiv2.model.Room;
+import com.souma1024.shogiv2.repository.RoomRepository;
 import com.souma1024.shogiv2.service.RoomService;
 
 @RestController
@@ -16,7 +18,7 @@ public class RoomController {
     
     private final RoomService roomService;
 
-    public RoomController(RoomService roomService) {
+    public RoomController(RoomService roomService, RoomRepository roomRepository) {
         this.roomService = roomService;
     }
 
@@ -27,10 +29,9 @@ public class RoomController {
             return ResponseEntity.badRequest().build(); // バリデーション例
         }
 
-        String roomId = roomService.generateRoomId();
-        String playerId = roomService.generatePlayerId();
+        Room room = roomService.createRoom(timeLimit);
 
-        CreateRoomResponse response = new CreateRoomResponse(roomId, playerId, timeLimit, "created");
+        CreateRoomResponse response = new CreateRoomResponse(room.getRoomId(), room.getFirstPlayerId(), timeLimit, room.getStatus());
         return ResponseEntity.status(201).body(response);
     }
 

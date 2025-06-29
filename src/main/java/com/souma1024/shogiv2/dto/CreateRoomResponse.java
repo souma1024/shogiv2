@@ -1,12 +1,14 @@
 package com.souma1024.shogiv2.dto;
 
+import com.souma1024.shogiv2.common.enums.RoomStatus;
+
 public class CreateRoomResponse {
-     private String roomId;
+    private String roomId;
     private String playerId;
     private int timeLimit;
-    private String status;
+    private RoomStatus status;
 
-    public CreateRoomResponse(String roomId, String playerId, int timeLimit, String status) {
+    public CreateRoomResponse(String roomId, String playerId, int timeLimit, RoomStatus status) {
         this.roomId = roomId;
         this.playerId = playerId;
         this.timeLimit = timeLimit;
@@ -25,7 +27,7 @@ public class CreateRoomResponse {
         return timeLimit;
     }
 
-    public String getStatus() {
+    public RoomStatus getStatus() {
         return status;
     }
 }
