@@ -15,7 +15,6 @@
         <div class="modal-content">
             <span class="close-button" id="closeModalBtn">&times;</span>
             <h2 th:text="#{top.room_create}"></h2>
-            <h3 th:text="#{roomID_text}"><strong>5rz8tq</strong></h3>
             <form id="createRoomForm">
                 <label th:text="#{timelimit_text}"></label>
                 <input type="number" name="timeLimit" min="5" max="360" step="5" required> <!--将来的にはプルダウン-->
@@ -23,14 +22,19 @@
             </form>
         </div>
     </div>
-
+    
+    <div id="createRoomResult" style="margin-top: 20px;"></div>
 
     <div>
         <h3 th:text="#{top.room_join_text}"></h3>
-        <form th:action="@{/games}" method="post">
-            <input type="text">
+        <form id="joinRoomForm">
+            <input type="text" id="roomIdInput" name="roomId" placeholder="ルームIDを入力" required>
             <button th:text="#{button.submit}" type="submit"></button>
         </form>
-    </div>
+        <div id="joinResult"></div> <!-- 結果表示用 -->
+    </div> 
+
+    <button th:text="#{button.start}"></button>
+
 </body>
 </html>
