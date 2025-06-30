@@ -1,6 +1,10 @@
 package com.souma1024.shogiv2.service;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -16,6 +20,8 @@ import jakarta.transaction.Transactional;
 public class RoomService {
 
     private final RoomRepository roomRepository;
+    private final Map<String, Set<String>> startRequests = new HashMap<>();
+
 
     public RoomService(RoomRepository roomRepository) {
         this.roomRepository = roomRepository;
@@ -58,6 +64,24 @@ public class RoomService {
                 room.getStatus(),
                 "ルームに参加できました"
         );
+    }
+
+
+    public String handleStartRequest(String roomId, String playerId) {
+        Room room = roomRepository.findById(roomId)
+            .orElseThrow(() -> new IllegalArgumentException("ルームが見つかりません"));
+
+        startRequests.putIfAbsent(roomId, new HashSet<>());
+        startRequests.get(roomId).add(playerId);
+
+        if (startRequests.get(roomId).contains(room.getFirstPlayerId()) &&
+            startRequests.get(roomId).contains(room.getSecondPlayerId())) {
+            room.setStatus(RoomStatus.ACTIVE); // RoomStatus.ACTIVE は "active" の状態を表す enum
+            roomRepository.save(room);
+            return "started";
+        }
+
+        return "waiting_for_opponent";
     }
 
     public String generateRoomId() {

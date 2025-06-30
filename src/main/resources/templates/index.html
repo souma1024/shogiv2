@@ -6,6 +6,7 @@
     <link rel="stylesheet" href="/css/modal.css">
     <link rel="stylesheet" href="/css/top.css">
     <script src="/js/modal.js" defer></script>
+    <script src="/js/top.js" defer></script>
     <title th:text="#{header.top_title}"></title>
 </head>
 <body>
@@ -35,7 +36,11 @@
         <div id="joinResult"></div> <!-- 結果表示用 -->
     </div> 
 
-    <button id="readyBtn" th:text="#{button.start}"></button>
+    <!-- 対局開始セクション -->
+    <div id="start-game-section">
+        <button id="startGameBtn" th:text="#{button.start}" data-roomId="" data-playerId=""></button>
+        <p id="startGameMessage"></p>
+    </div>
 
 </body>
 </html>

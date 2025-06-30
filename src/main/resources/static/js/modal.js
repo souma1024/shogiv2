@@ -15,30 +15,6 @@ document.getElementById('createRoomForm').addEventListener('submit', (e) => {
     document.getElementById('modal').classList.add('hidden');
 });
 
-document.getElementById("joinRoomForm").addEventListener("submit", function(event) {
-    event.preventDefault();
-    const roomId = document.getElementById("roomIdInput").value;
-
-    fetch(`/api/rooms/${roomId}/join`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        }
-    })
-    .then(async response => {
-        const data = await response.json();
-        const resultDiv = document.getElementById("joinResult");
-        if (response.ok) {
-            resultDiv.innerText = `ルームに参加しました! 持ち時間: ${data.timeLimit}分`;
-            // 必要ならここで画面遷移なども追加可能
-        } else {
-            resultDiv.innerText = `エラー: ${data.message || "不明なエラーが発生しました"}`;
-        }
-    })
-    .catch(error => {
-        document.getElementById("joinResult").innerText = `通信エラー: ${error.message}`;
-    });
-});
 
 document.getElementById("createRoomForm").addEventListener("submit", function(event) {
     event.preventDefault();
@@ -71,6 +47,12 @@ document.getElementById("createRoomForm").addEventListener("submit", function(ev
             document.getElementById("openModalBtn").disabled = true;
             document.getElementById("roomIdInput").disabled = true;
             document.getElementById("joinRoomButton").disabled = true;
+            currentRoomId = data.roomId;
+            currentPlayerId = data.playerId;
+
+            // 画面表示や開始ボタンに反映
+            document.getElementById('startGameBtn').dataset.roomId = currentRoomId;
+            document.getElementById('startGameBtn').dataset.playerId = currentPlayerId;
         } else {
             resultArea.innerHTML = `
                 <div class="error">
@@ -89,3 +71,4 @@ document.getElementById("createRoomForm").addEventListener("submit", function(ev
         `;
     });
 });
+
