@@ -11,36 +11,54 @@
 .cell {
   width: 40px;
   height: 40px;
-  background-color: #f4b860; /* 将棋盤風の色 */
   display: flex;
   justify-content: center;
   align-items: center;
   font-size: 16px;
   font-weight: bold;
+  background-color: #f4b860; /* 将棋盤風の色 */
   cursor: pointer;
 }
 
 .game-screen {
-    width: 400px; 
-    margin: 0 auto; 
-    background: #fff0c0; 
-    padding: 20px; 
-    border: 1px solid #ccc; 
-    border-radius: 8px;
+  width: 400px; 
+  margin: 0 auto; 
+  padding: 20px; 
+  border: 1px solid #ccc; 
+  border-radius: 8px;
+  background: #fff0c0; 
 }
 
 .botton-info {
-    display: flex; 
-    justify-content: space-between;
+  display: flex; 
+  justify-content: space-between;
 }
 
 .time-limit {
-    flex: 1; 
-    margin-right: 10px;
+  flex: 1; 
+  margin-right: 10px;
+}
+
+.top-buttons {
+  display: flex;
+  justify-content: space-between; 
+  margin-bottom: 10px;
 }
 
 .sente {
-    background: #66ccff; 
-    border-radius: 50%; 
-    padding: 5px;
+  padding: 10px;
+  border-radius: 50%;
+  background: #66ccff;  
+}
+
+.gote {
+  padding: 10px;
+  border-radius: 50%; 
+  background: orange; 
+}
+
+.surrender { 
+  padding: 10px;
+  border-radius: 50%; 
+  background: #66ccff;
 }
