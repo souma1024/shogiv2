@@ -13,11 +13,11 @@
     <h2 th:text="#{game.title}"></h2>
 
     <!-- 操作ボタン -->
-    <div class="top-buttons" style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-        <button th:text="#{game.order_second}" style="background: orange; border-radius: 50%; padding: 10px;"></button>
+    <div class="top-buttons">
+        <div th:text="#{game.order_second}" class="gote"></div>
 
         <form th:action="@{/review}" method="get" style="margin: 0;"></form>
-            <button th:text="#{game.surrender}" type="submit" style="background: #66ccff; border-radius: 50%; padding: 10px;"></button>
+            <button id="surrender" th:text="#{game.surrender}" type="submit"></button>
         </form>
     </div>
 
@@ -28,8 +28,8 @@
 
     <!-- 下部情報 -->
     <div class="bottom-info">
-        <button th:text="#{game.timelimit_left}" class="time-limit"></button>
-        <button th:text="#{game.order_first}" class="sente"></button>
+        <div th:text="#{game.timelimit_left}" class="time-limit"></div>
+        <div th:text="#{game.order_first}" class="sente"></div>
     </div>
 </div>
 
