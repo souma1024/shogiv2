@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="/css/modal.css">
+    <link rel="stylesheet" href="/css/top.css">
     <script src="/js/modal.js" defer></script>
     <title th:text="#{header.top_title}"></title>
 </head>
@@ -29,12 +30,12 @@
         <h3 th:text="#{top.room_join_text}"></h3>
         <form id="joinRoomForm">
             <input type="text" id="roomIdInput" name="roomId" placeholder="ルームIDを入力" required>
-            <button th:text="#{button.submit}" type="submit"></button>
+            <button id="joinRoomButton" th:text="#{button.submit}" type="submit"></button>
         </form>
         <div id="joinResult"></div> <!-- 結果表示用 -->
     </div> 
 
-    <button th:text="#{button.start}"></button>
+    <button id="readyBtn" th:text="#{button.start}"></button>
 
 </body>
 </html>

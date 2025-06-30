@@ -68,6 +68,9 @@ document.getElementById("createRoomForm").addEventListener("submit", function(ev
                     <p>持ち時間: ${data.timeLimit}分</p>
                 </div>
             `;
+            document.getElementById("openModalBtn").disabled = true;
+            document.getElementById("roomIdInput").disabled = true;
+            document.getElementById("joinRoomButton").disabled = true;
         } else {
             resultArea.innerHTML = `
                 <div class="error">
