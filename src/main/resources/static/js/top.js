@@ -22,6 +22,12 @@ document.getElementById("joinRoomForm").addEventListener("submit", function(even
             document.getElementById('startGameBtn').dataset.roomId = currentRoomId;
             document.getElementById('startGameBtn').dataset.playerId = currentPlayerId;
 
+            document.getElementById("openModalBtn").disabled = true;
+            document.getElementById("roomIdInput").disabled = true;
+            document.getElementById("joinRoomButton").disabled = true;
+            document.getElementById("roomCancelBtn").classList.remove("hidden");
+
+
         } else {
             resultDiv.innerText = `エラー: ${data.message || "不明なエラーが発生しました"}`;
         }
@@ -62,4 +68,16 @@ document.addEventListener('DOMContentLoaded', function () {
             message.textContent = '開始に失敗しました。もう一度お試しください。';
         }
     }); 
+});
+
+document.getElementById("roomCancelBtn").addEventListener("click", () => {
+    document.getElementById("openModalBtn").disabled = false;
+    document.getElementById("roomIdInput").disabled = false;
+    document.getElementById("joinRoomButton").disabled = false;
+    document.getElementById("roomCancelBtn").classList.add("hidden");
+
+    document.getElementById("createRoomResult").innerHTML = "";
+    document.getElementById("joinResult").innerHTML = "";
+    document.getElementById("roomIdInput").value = "";
+
 });

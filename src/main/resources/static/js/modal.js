@@ -47,6 +47,7 @@ document.getElementById("createRoomForm").addEventListener("submit", function(ev
             document.getElementById("openModalBtn").disabled = true;
             document.getElementById("roomIdInput").disabled = true;
             document.getElementById("joinRoomButton").disabled = true;
+            document.getElementById("roomCancelBtn").classList.remove("hidden");
             currentRoomId = data.roomId;
             currentPlayerId = data.playerId;
 
