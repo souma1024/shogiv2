@@ -1,0 +1,23 @@
+.success {
+    padding: 10px;
+    background-color: #e0ffe0;
+    border: 1px solid #00aa00;
+    margin: 10px 0;
+}
+
+.error {
+    padding: 10px;
+    background-color: #ffe0e0;
+    border: 1px solid #aa0000;
+    margin: 10px 0;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+input:disabled {
+    background-color: #eee;
+}

@@ -9,12 +9,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 @RequestMapping
 public class GameStartController {
     
-    @PostMapping("/games")
+    @PostMapping("/games/{roomId}")
     public String gameStart() {
         return "game";
     }
 
-    @GetMapping("/games")
+    @GetMapping("/games/{roomId}")
     public String game() {
         return "game";
     }
