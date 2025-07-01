@@ -10,4 +10,5 @@ public class ReconnectResponse {
     private String roomId;
     private String currentState;
     private boolean isSuccess;
+    private String message;
 }

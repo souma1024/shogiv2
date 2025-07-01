@@ -142,13 +142,41 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void handleReconnectRequest(ReconnectRequest req, WebSocketSession session) throws Exception {
-        ReconnectResponse res = new ReconnectResponse();
-        res.setRoomId(req.getRoomId());
-        res.setCurrentState("game_in_progress");
-        res.setSuccess(true);
+        String roomId = req.getRoomId();
+        String playerId = req.getPlayerId();
+
+        ShogiEngine engine = roomManager.getEngine(roomId);
+        if (engine == null) {
+            ReconnectResponse error = new ReconnectResponse();
+            error.setRoomId(roomId);
+            error.setSuccess(false);
+            error.setMessage("ルームが存在しません");
+
+            session.sendMessage(new TextMessage(mapper.writeValueAsString(
+                new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, error)
+            )));
+            return;
+        }
+
+        // 成功通知（軽量）
+        ReconnectResponse ok = new ReconnectResponse();
+        ok.setRoomId(roomId);
+        ok.setSuccess(true);
+        ok.setMessage("再接続成功");
 
         session.sendMessage(new TextMessage(mapper.writeValueAsString(
-            new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, res)
+            new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, ok)
+        )));
+
+        // 局面状態の送信
+        GameStateDto state = new GameStateDto();
+        state.setRoomId(roomId);
+        state.setBoard(engine.getBoard());
+        state.setCapturedPieces(engine.getCapturedPieces());
+        state.setCurrentPlayerId(engine.getCurrentPlayerId());
+
+        session.sendMessage(new TextMessage(mapper.writeValueAsString(
+            new WebSocketMessage(WebSocketType.GAME_STATE, state)
         )));
     }
 

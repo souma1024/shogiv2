@@ -38,5 +38,8 @@ public enum WebSocketType {
     RECONNECT_REQUEST,
 
     @JsonProperty("reconnect_response")
-    RECONNECT_RESPONSE
+    RECONNECT_RESPONSE,
+
+    @JsonProperty("game_status")
+    GAME_STATE
 }
