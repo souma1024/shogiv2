@@ -38,7 +38,7 @@ public class GameController {
 
         if (tracker.isBothReady(roomId)) {
             // 対局開始の条件がそろったとき
-            roomManager.startGame(roomId);
+            roomManager.tryStartGame(roomId);
 
             // 両プレイヤーに WebSocket で通知
             StartGameResponse wsResponse = new StartGameResponse();
