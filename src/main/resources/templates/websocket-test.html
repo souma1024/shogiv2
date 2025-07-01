@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>将棋 WebSocket テスト</title>
+</head>
+<body>
+    <h2>将棋 WebSocket クライアント</h2>
+
+    <label>roomId: <input type="text" id="roomId"></label><br>
+    <label>playerId: <input type="text" id="playerId"></label><br>
+    <button onclick="connect()">WebSocket 接続</button>
+    <button onclick="sendMove()">move_request 送信</button>
+    <pre id="log" style="background:#f4f4f4; padding:1em;"></pre>
+
+    <script>
+        let socket = null;
+
+        function log(message) {
+            document.getElementById("log").textContent += message + "\n";
+        }
+
+        function connect() {
+            const roomId = document.getElementById("roomId").value;
+            const playerId = document.getElementById("playerId").value;
+            socket = new WebSocket(`ws://localhost:8080/ws/shogi?roomId= + roomId&playerId=${playerId}`);
+
+            socket.onopen = () => {
+                log("[接続] WebSocket connected");
+            };
+
+            socket.onmessage = (event) => {
+                log("[受信] " + event.data);
+            };
+
+            socket.onerror = (e) => {
+                log("[エラー] " + e.message);
+            };
+
+            socket.onclose = () => {
+                log("[切断] WebSocket closed");
+            };
+        }
+
+        function sendMove() {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                log("[警告] WebSocketが未接続です");
+                return;
+            }
+
+            const request = {
+                type: "move_request",
+                payload : {
+                    roomId: document.getElementById("roomId").value,
+                    playerId: document.getElementById("playerId").value,
+                    from: [6, 6],
+                    to: [6, 5],
+                    kind: 1,
+                    promotion: false
+                }
+            };
+
+            socket.send(JSON.stringify(request));
+            log("[送信] move_request を送信しました");
+        }
+    </script>
+</body>
+</html>
