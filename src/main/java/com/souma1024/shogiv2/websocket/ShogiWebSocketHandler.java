@@ -145,8 +145,8 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         String roomId = req.getRoomId();
         String playerId = req.getPlayerId();
 
-        ShogiEngine engine = roomManager.getEngine(roomId);
-        if (engine == null) {
+        System.out.println("🛠 reconnect_request: roomId = " + roomId + ", playerId = " + playerId);
+        if (!roomManager.existsRoom(roomId)) {
             ReconnectResponse error = new ReconnectResponse();
             error.setRoomId(roomId);
             error.setSuccess(false);
@@ -158,7 +158,21 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        // 成功通知（軽量）
+        // ShogiEngine は対局開始後にのみ存在
+        ShogiEngine engine = roomManager.getEngine(roomId);
+        if (engine == null) {
+            ReconnectResponse pending = new ReconnectResponse();
+            pending.setRoomId(roomId);
+            pending.setSuccess(true);
+            pending.setMessage("対局はまだ開始していません");
+
+            session.sendMessage(new TextMessage(mapper.writeValueAsString(
+                new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, pending)
+            )));
+            return;
+        }
+
+        // 成功
         ReconnectResponse ok = new ReconnectResponse();
         ok.setRoomId(roomId);
         ok.setSuccess(true);
@@ -168,7 +182,6 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, ok)
         )));
 
-        // 局面状態の送信
         GameStateDto state = new GameStateDto();
         state.setRoomId(roomId);
         state.setBoard(engine.getBoard());

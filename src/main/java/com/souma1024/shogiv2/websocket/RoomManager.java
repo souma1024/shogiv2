@@ -25,6 +25,10 @@ public class RoomManager {
         return instance;
     }
 
+    public boolean existsRoom(String roomId) {
+        return playerMap.containsKey(roomId);
+    }
+
     // プレイヤーをルームに追加
     public synchronized boolean canAddPlayer(String roomId, Player player) {
         Player[] players = playerMap.computeIfAbsent(roomId, k -> new Player[2]);
@@ -60,14 +64,14 @@ public class RoomManager {
     // セッションを削除（全てのセッションが切れたらルーム削除）
     public void removeSession(String roomId, WebSocketSession session) {
         List<WebSocketSession> sessions = sessionMap.get(roomId);
-        if (sessions != null) {
-            sessions.remove(session);
-            System.out.println("🔌 WebSocket切断: " + session.getId() + " from room " + roomId);
-            if (sessions.isEmpty()) {
-                removeRoom(roomId);
-                System.out.println("🧹 ルーム削除: " + roomId + "（全セッション切断）");
-            }
-        }
+        // if (sessions != null) {
+        //     sessions.remove(session);
+        //     System.out.println("🔌 WebSocket切断: " + session.getId() + " from room " + roomId);
+        //     if (sessions.isEmpty()) {
+        //         removeRoom(roomId);
+        //         System.out.println("🧹 ルーム削除: " + roomId + "（全セッション切断）");
+        //     }
+        // }
     }
 
     public List<WebSocketSession> getSessions(String roomId) {
@@ -96,6 +100,11 @@ public class RoomManager {
     public ShogiEngine getEngine(String roomId) {
         return engineMap.get(roomId);
     }
+
+    public Player[] getPlayers(String roomId) {
+        return playerMap.getOrDefault(roomId, new Player[2]);
+    }
+
 
     public void removeRoom(String roomId) {
         startedRooms.remove(roomId);

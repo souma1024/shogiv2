@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.souma1024.shogiv2.domain.Player;
+import com.souma1024.shogiv2.domain.PlayerSide;
 import com.souma1024.shogiv2.dto.CreateRoomRequest;
 import com.souma1024.shogiv2.dto.CreateRoomResponse;
 import com.souma1024.shogiv2.dto.ErrorResponse;
@@ -14,6 +16,7 @@ import com.souma1024.shogiv2.dto.JoinRoomResqponse;
 import com.souma1024.shogiv2.model.Room;
 import com.souma1024.shogiv2.repository.RoomRepository;
 import com.souma1024.shogiv2.service.RoomService;
+import com.souma1024.shogiv2.websocket.RoomManager;
 
 @RestController
 @RequestMapping("/api")
@@ -41,6 +44,7 @@ public class RoomController {
         Room room = roomService.createRoom(timeLimit);
 
         CreateRoomResponse response = new CreateRoomResponse(room.getRoomId(), room.getFirstPlayerId(), timeLimit, room.getStatus(), "ルーム作成に成功しました");
+        RoomManager.getInstance().canAddPlayer(response.getRoomId(), new Player(response.getPlayerId(), PlayerSide.SENTE));
         return ResponseEntity.status(201).body(response);
     }
 
@@ -48,6 +52,9 @@ public class RoomController {
     public ResponseEntity<?> joinRoom(@PathVariable String roomId) {
         try {
             JoinRoomResqponse response = roomService.joinRoom(roomId);
+            Player player = new Player(response.getPlayerId(), PlayerSide.GOTE); // or SENTE
+            RoomManager.getInstance().canAddPlayer(roomId, player);
+
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             ErrorResponse error = new ErrorResponse(

@@ -1,5 +1,6 @@
 package com.souma1024.shogiv2.controller;
 
+import java.util.Arrays;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
@@ -12,6 +13,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.souma1024.shogiv2.domain.Player;
 import com.souma1024.shogiv2.dto.StartGameResponse;
 import com.souma1024.shogiv2.dto.game.RoomStartTracker;
 import com.souma1024.shogiv2.websocket.RoomManager;
@@ -35,6 +37,10 @@ public class GameStartController {
 
         StartGameResponse response = new StartGameResponse();
         response.setPlayerId(playerId);
+
+        System.out.println("🧪 RoomStartTracker: bothReady = " + tracker.isBothReady(roomId));
+        System.out.println("🧪 playerMap.containsKey: " + roomManager.existsRoom(roomId));
+        System.out.println("🧪 playerMap内容: " + Arrays.toString(roomManager.getPlayers(roomId)));
 
         if (tracker.isBothReady(roomId)) {
             // 対局開始の条件がそろったとき
