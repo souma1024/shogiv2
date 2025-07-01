@@ -70,7 +70,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        boolean started = roomManager.startGame(roomId);
+        boolean started = roomManager.tryStartGame(roomId);
 
         if (started) {
             StartGameResponse res = new StartGameResponse();

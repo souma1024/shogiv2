@@ -26,7 +26,7 @@ public class RoomManager {
     }
 
     // プレイヤーをルームに追加
-    public synchronized boolean addPlayer(String roomId, Player player) {
+    public synchronized boolean canAddPlayer(String roomId, Player player) {
         Player[] players = playerMap.computeIfAbsent(roomId, k -> new Player[2]);
         if (players[0] == null) {
             players[0] = player;
@@ -55,7 +55,6 @@ public class RoomManager {
     // セッションを追加
     public void addSession(String roomId, WebSocketSession session) {
         sessionMap.computeIfAbsent(roomId, k -> new CopyOnWriteArrayList<>()).add(session);
-        System.out.println("🟢 WebSocket接続: " + session.getId() + " → room " + roomId);
     }
 
     // セッションを削除（全てのセッションが切れたらルーム削除）
@@ -77,7 +76,7 @@ public class RoomManager {
     }
 
     // 対局開始
-    public synchronized boolean startGame(String roomId) {
+    public synchronized boolean tryStartGame(String roomId) {
         if (!startedRooms.contains(roomId)) {
             Player[] players = playerMap.get(roomId);
             if (players != null && players[0] != null && players[1] != null) {
