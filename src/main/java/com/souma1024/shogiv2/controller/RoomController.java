@@ -11,8 +11,6 @@ import com.souma1024.shogiv2.dto.CreateRoomRequest;
 import com.souma1024.shogiv2.dto.CreateRoomResponse;
 import com.souma1024.shogiv2.dto.ErrorResponse;
 import com.souma1024.shogiv2.dto.JoinRoomResqponse;
-import com.souma1024.shogiv2.dto.StartGameRequest;
-import com.souma1024.shogiv2.dto.StartGameResponse;
 import com.souma1024.shogiv2.model.Room;
 import com.souma1024.shogiv2.repository.RoomRepository;
 import com.souma1024.shogiv2.service.RoomService;
@@ -69,14 +67,4 @@ public class RoomController {
             return ResponseEntity.badRequest().body(error);
         }
     }
-
-    @PostMapping("/rooms/{roomId}/start")
-    public ResponseEntity<StartGameResponse> startGame(
-        @PathVariable String roomId,
-        @RequestBody StartGameRequest request
-    ) {
-        String status = roomService.handleStartRequest(roomId, request.getPlayerId());
-        return ResponseEntity.ok(new StartGameResponse(status));
-    }
-
 }

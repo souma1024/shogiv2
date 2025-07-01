@@ -1,10 +1,21 @@
 package com.souma1024.shogiv2.dto;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
 public class StartGameResponse {
+    private String roomId;
     private String status; // "waiting_for_opponent" または "started"
+    private String playerId;
+
+    public StartGameResponse() {
+        // デフォルトコンストラクタ
+    }
+
+    public StartGameResponse(String roomId, String status) {
+        this.roomId = roomId;
+        this.status = status;
+    }
+
+
 }
