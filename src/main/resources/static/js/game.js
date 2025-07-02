@@ -24,6 +24,10 @@ function setupWebSocket(roomId, playerId) {
         }
 
         if (msg.type === "game_state") {
+
+            console.log("📥 game_state を受信:", msg.payload); // ★これを追加
+
+
             const state = msg.payload;
             drawBoard(state.board);
             updateCapturedPieces(state.capturedPieces);
@@ -37,7 +41,13 @@ function setupWebSocket(roomId, playerId) {
 function drawBoard(board) {
     for (let y = 0; y < 9; y++) {
         for (let x = 0; x < 9; x++) {
-            const cell = document.getElementById(`cell-${x}-${y}`);
+            const cellId = document.getElementById(`cell-${x}-${y}`); 
+            const cell = document.getElementById(cellId);
+            if (!cell) {
+                console.warn("⚠️ cell not found:", cellId);
+                continue;
+            }
+
             const piece = board[y][x];
             cell.textContent = piece === 0 ? "" : getPieceName(piece);
         }
