@@ -44,7 +44,7 @@ function drawBoard(board) {
             }
 
             const piece = board[y][x];
-            cell.textContent = piece === 0 ? "" : getPieceName(piece);
+            cell.innerHTML = piece === 0 ? "" : getPieceImage(piece);
         }
     }
 }
@@ -90,3 +90,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setupWebSocket(roomId, playerId);
 });
+
+function getPieceImage(piece) {
+    if (piece === 0) return "";
+
+    const abs = Math.abs(piece);
+    const isPromoted = abs >= 100 && abs < 200;
+    const isSente = piece > 0;
+
+    let base = isPromoted ? abs - 100 : abs;
+    let name = {
+        1: "fu", 2: "kyo", 3: "kei", 4: "gin", 5: "kin",
+        6: "kaku", 7: "hisya", 8: "uma", 9: "ryu", 77: isSente ? "ou" : "gyoku"
+    }[base];
+
+    if (!name) return "";
+
+    if (isPromoted && base !== 5) {
+        name = "promoted_" + name;
+    }
+
+    const side = isSente ? "sente" : "gote";
+    const rotateStyle = isSente ? "" : "transform: rotate(180deg);";
+
+    
+
+    return `<img src="/images/piece/sente_${name}.png" class="piece-image" style="${rotateStyle}">`;
+}
