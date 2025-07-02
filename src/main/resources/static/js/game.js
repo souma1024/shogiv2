@@ -1,4 +1,5 @@
 let myPlayerId = ""; // ページ読み込み時にURLなどからセットする
+socket = null;
 
 function setupWebSocket(roomId, playerId) {
     myPlayerId = playerId;
@@ -6,42 +7,36 @@ function setupWebSocket(roomId, playerId) {
     const socket = new WebSocket(`ws://${location.host}/ws/shogi?roomId=${roomId}&playerId=${playerId}`);
 
     socket.onopen = () => {
-        socket.send(JSON.stringify({
-            type: "reconnect_request",
-            payload: { roomId, playerId }
-        }));
+        console.log("✅Websocket 接続完了");
+
+        const connectedMsg = {
+            type: "start_game_request",
+            payload : {
+                roomId: roomId,
+                playerId: playerId
+            }
+        }
+
+        socket.send(JSON.stringify(connectedMsg));
     };
 
     socket.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-
-        if (msg.type === "reconnect_response") {
-            if (!msg.payload.success) {
-                alert("再接続失敗: " + msg.payload.message);
-            } else {
-                console.log("✅ 再接続成功");
-            }
-        }
+        console.log("📥 メッセージ受信:", msg);
 
         if (msg.type === "game_state") {
-
-            console.log("📥 game_state を受信:", msg.payload); // ★これを追加
-
-
             const state = msg.payload;
             drawBoard(state.board);
             updateCapturedPieces(state.capturedPieces);
             updateTurnIndicator(state.currentPlayerId);
         }
-
-        // 他の type: move_response, game_over_response 等の処理もここに追記
     };
 }
 
 function drawBoard(board) {
     for (let y = 0; y < 9; y++) {
         for (let x = 0; x < 9; x++) {
-            const cellId = document.getElementById(`cell-${x}-${y}`); 
+            const cellId = `cell-${x}-${y}`;
             const cell = document.getElementById(cellId);
             if (!cell) {
                 console.warn("⚠️ cell not found:", cellId);
@@ -49,7 +44,7 @@ function drawBoard(board) {
             }
 
             const piece = board[y][x];
-            cell.textContent = piece === 0 ? "" : getPieceName(piece);
+            cell.innerHTML = piece === 0 ? "" : getPieceImage(piece);
         }
     }
 }
@@ -95,3 +90,30 @@ document.addEventListener("DOMContentLoaded", () => {
 
     setupWebSocket(roomId, playerId);
 });
+
+function getPieceImage(piece) {
+    if (piece === 0) return "";
+
+    const abs = Math.abs(piece);
+    const isPromoted = abs >= 100 && abs < 200;
+    const isSente = piece > 0;
+
+    let base = isPromoted ? abs - 100 : abs;
+    let name = {
+        1: "fu", 2: "kyo", 3: "kei", 4: "gin", 5: "kin",
+        6: "kaku", 7: "hisya", 8: "uma", 9: "ryu", 77: isSente ? "ou" : "gyoku"
+    }[base];
+
+    if (!name) return "";
+
+    if (isPromoted && base !== 5) {
+        name = "promoted_" + name;
+    }
+
+    const side = isSente ? "sente" : "gote";
+    const rotateStyle = isSente ? "" : "transform: rotate(180deg);";
+
+    
+
+    return `<img src="/images/piece/sente_${name}.png" class="piece-image" style="${rotateStyle}">`;
+}

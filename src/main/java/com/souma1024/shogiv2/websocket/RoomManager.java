@@ -1,7 +1,9 @@
 package com.souma1024.shogiv2.websocket;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.souma1024.shogiv2.domain.Player;
 import com.souma1024.shogiv2.domain.ShogiEngine;
+import com.souma1024.shogiv2.websocket.dto.WebSocketMessage;
 
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,13 @@ public class RoomManager {
 
     public boolean existsRoom(String roomId) {
         return playerMap.containsKey(roomId);
+    }
+
+    public synchronized ShogiEngine getOrCreateEngine(String roomId, String senteId, String goteId) {
+        return engineMap.computeIfAbsent(roomId, id -> {
+            startedRooms.add(roomId); // 必要に応じてここで開始フラグを立てる
+            return new ShogiEngine(senteId, goteId);
+        });
     }
 
     // プレイヤーをルームに追加
@@ -64,15 +73,31 @@ public class RoomManager {
     // セッションを削除（全てのセッションが切れたらルーム削除）
     public void removeSession(String roomId, WebSocketSession session) {
         List<WebSocketSession> sessions = sessionMap.get(roomId);
-        // if (sessions != null) {
-        //     sessions.remove(session);
-        //     System.out.println("🔌 WebSocket切断: " + session.getId() + " from room " + roomId);
-        //     if (sessions.isEmpty()) {
-        //         removeRoom(roomId);
-        //         System.out.println("🧹 ルーム削除: " + roomId + "（全セッション切断）");
-        //     }
-        // }
+        if (sessions != null) {
+            sessions.remove(session);
+            System.out.println("🔌 WebSocket切断: " + session.getId() + " from room " + roomId);
+            if (sessions.isEmpty()) {
+                removeRoom(roomId);
+                System.out.println("🧹 ルーム削除: " + roomId + "（全セッション切断）");
+            }
+        }
     }
+
+    public void broadcastToRoom(String roomId, WebSocketMessage message) {
+        List<WebSocketSession> sessions = getSessions(roomId);
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            String json = objectMapper.writeValueAsString(message);
+            for (WebSocketSession session : sessions) {
+                if (session.isOpen()) {
+                    session.sendMessage(new org.springframework.web.socket.TextMessage(json));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 
     public List<WebSocketSession> getSessions(String roomId) {
         List<WebSocketSession> sessions = sessionMap.get(roomId);

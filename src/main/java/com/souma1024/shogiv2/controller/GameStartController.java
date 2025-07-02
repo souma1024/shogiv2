@@ -1,70 +1,62 @@
 package com.souma1024.shogiv2.controller;
 
-import java.util.Arrays;
 import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.socket.TextMessage;
-import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.server.ResponseStatusException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.souma1024.shogiv2.domain.Player;
-import com.souma1024.shogiv2.dto.StartGameResponse;
-import com.souma1024.shogiv2.dto.game.RoomStartTracker;
-import com.souma1024.shogiv2.websocket.RoomManager;
-import com.souma1024.shogiv2.websocket.dto.WebSocketMessage;
-import com.souma1024.shogiv2.websocket.dto.enums.WebSocketType;
+import com.souma1024.shogiv2.common.enums.PlayerStatus;
+import com.souma1024.shogiv2.common.enums.RoomStatus;
+import com.souma1024.shogiv2.model.Room;
+import com.souma1024.shogiv2.repository.RoomRepository;
 
 
 @RestController
 @RequestMapping("/api/rooms")
 public class GameStartController {
-    private final RoomManager roomManager = RoomManager.getInstance();
-    private final ObjectMapper mapper = new ObjectMapper();
+
+
+    private final RoomRepository roomRepository;
+
+    public GameStartController(RoomRepository roomRepository) {
+        this.roomRepository = roomRepository;
+    }
 
     // プレイヤーが対局開始ボタンを押した時のエンドポイント
     @PostMapping("/{roomId}/start")
-    public ResponseEntity<StartGameResponse> startGame(@PathVariable String roomId, @RequestBody Map<String, String> body) throws Exception {
+    public ResponseEntity<?> startGame(@PathVariable String roomId, @RequestBody Map<String, String> body) throws Exception {
         String playerId = body.get("playerId");
 
-        RoomStartTracker tracker = RoomStartTracker.getInstance();
-        tracker.markPlayerReady(roomId, playerId);
+        Room room = roomRepository.findById(roomId)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
-        StartGameResponse response = new StartGameResponse();
-        response.setPlayerId(playerId);
-
-        System.out.println("🧪 RoomStartTracker: bothReady = " + tracker.isBothReady(roomId));
-        System.out.println("🧪 playerMap.containsKey: " + roomManager.existsRoom(roomId));
-        System.out.println("🧪 playerMap内容: " + Arrays.toString(roomManager.getPlayers(roomId)));
-
-        if (tracker.isBothReady(roomId)) {
-            // 対局開始の条件がそろったとき
-            roomManager.tryStartGame(roomId);
-
-            // 両プレイヤーに WebSocket で通知
-            StartGameResponse wsResponse = new StartGameResponse();
-            wsResponse.setPlayerId(playerId);
-            wsResponse.setStatus("started");
-
-            WebSocketMessage message = new WebSocketMessage(WebSocketType.START_GAME_RESPONSE, wsResponse);
-            String json = mapper.writeValueAsString(message);
-
-            for (WebSocketSession session : roomManager.getSessions(roomId)) {
-                if (session.isOpen()) {
-                    session.sendMessage(new TextMessage(json));
-                }
+        if (playerId.equals(room.getFirstPlayerId())) {
+                room.setFirstPlayerStatus(PlayerStatus.READY);
+            } else if (playerId.equals(room.getSecondPlayerId())) {
+                room.setSecondPlayerStatus(PlayerStatus.READY);
+            } else {
+                return ResponseEntity.badRequest().body("Invalid playerId for this room");
             }
 
-            response.setStatus("started");
-        } else {
-            response.setStatus("waiting");
-        }
+            // 両者READYなら roomStatus を READY に
+            if (room.getFirstPlayerStatus() == PlayerStatus.READY &&
+                room.getSecondPlayerStatus() == PlayerStatus.READY) {
+                room.setStatus(RoomStatus.READY);
+            }
 
-        return ResponseEntity.ok(response);
+            roomRepository.save(room);
+
+            return ResponseEntity.ok(Map.of(
+                "roomId", roomId,
+                "playerId", playerId,
+                "status", room.getStatus()
+            ));
+        
     }
 }

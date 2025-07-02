@@ -1,19 +1,3 @@
-let currentRoomId = null;
-let currentPlayerId = null;
-let socket = null;
-
-function setupWebSocket(roomId, playerId) {
-    socket = new WebSocket(`ws://${location.host}/ws/shogi?roomId=${roomId}&playerId=${playerId}`);
-
-    socket.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-
-        if (message.type === "start_game_response" && message.payload.status === "started") {
-            window.location.href = `/games/${roomId}?playerId=${playerId}`;
-        }
-    };
-}
-
 // ルーム参加処理
 document.getElementById("joinRoomForm").addEventListener("submit", function(event) {
     event.preventDefault();
@@ -32,15 +16,14 @@ document.getElementById("joinRoomForm").addEventListener("submit", function(even
         if (response.ok) {
             resultDiv.innerText = `ルームに参加しました! 持ち時間: ${data.timeLimit}分`;
 
-            currentRoomId = data.roomId;
-            currentPlayerId = data.playerId;
-
-            // WebSocket 接続
-            setupWebSocket(currentRoomId, currentPlayerId);
-
             // 開始ボタン用データ
-            document.getElementById('startGameBtn').dataset.roomId = currentRoomId;
-            document.getElementById('startGameBtn').dataset.playerId = currentPlayerId;
+            const currentRoomId = roomId; // 入力されたroomIdをそのまま使う
+            const currentPlayerId = data.playerId; // サーバーのレスポンスに含まれていると仮定
+
+            document.getElementById("startGameBtn").dataset.roomId = currentRoomId;
+            document.getElementById("startGameBtn").dataset.playerId = currentPlayerId;
+
+
 
             // UI 更新
             document.getElementById("openModalBtn").disabled = true;
@@ -63,15 +46,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const message = document.getElementById('startGameMessage');
 
     startBtn.addEventListener('click', async () => {
+        // 対局開始リクエスト送信
+
         const roomId = startBtn.dataset.roomId;
         const playerId = startBtn.dataset.playerId;
 
-        // 先に WebSocket が確立されていなければ接続
-        if (!socket || socket.readyState !== WebSocket.OPEN) {
-            setupWebSocket(roomId, playerId);
-        }
+        console.log("🎯 roomId:", roomId);
+        console.log("🎯 playerId:", playerId);
 
-        // 対局開始リクエスト送信
         const response = await fetch(`/api/rooms/${roomId}/start`, {
             method: 'POST',
             headers: {
@@ -83,11 +65,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (response.ok) {
             const data = await response.json();
 
-            if (data.status !== 'started') {
-                message.textContent = '対局開始待機中...（相手の開始を待っています）';
-                startBtn.disabled = true;
-            }
-            // ✅ 遷移は WebSocket メッセージで統一（ここでは行わない）
+            // 対局が始まっている or すでに開始可能なら遷移
+            if (data.status === 'ready' || data.status === 'waiting') {
+                window.location.href = `/games/${roomId}?playerId=${playerId}`;
+            } else {
+                message.textContent = '状態が不明です。もう一度お試しください。';
+            }          
         } else {
             message.textContent = '開始に失敗しました。もう一度お試しください。';
         }
@@ -105,8 +88,4 @@ document.getElementById("roomCancelBtn").addEventListener("click", () => {
     document.getElementById("joinResult").innerHTML = "";
     document.getElementById("roomIdInput").value = "";
 
-    // ソケット切断
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.close();
-    }
 });
