@@ -13,7 +13,6 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.souma1024.shogiv2.domain.Player;
 import com.souma1024.shogiv2.dto.StartGameResponse;
 import com.souma1024.shogiv2.dto.game.RoomStartTracker;
 import com.souma1024.shogiv2.websocket.RoomManager;
