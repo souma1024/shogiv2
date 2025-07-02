@@ -143,8 +143,12 @@ public class ShogiEngine {
         return PieceUtil.copyBoard(board);
     }
 
-    public List<Integer> getCapturedPieces(Player player) {
-        return new ArrayList<>(capturedPieces.getOrDefault(player.getId(), new ArrayList<>()));
+    public Map<String, List<Integer>> getCapturedPieces() {
+        Map<String, List<Integer>> copy = new HashMap<>();
+        for (Map.Entry<String, List<Integer>> entry : capturedPieces.entrySet()) {
+            copy.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+        }
+        return copy;
     }
 
     private int getPieceAt(int x, int y) {

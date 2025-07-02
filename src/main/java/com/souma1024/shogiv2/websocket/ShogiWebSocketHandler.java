@@ -142,13 +142,54 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void handleReconnectRequest(ReconnectRequest req, WebSocketSession session) throws Exception {
-        ReconnectResponse res = new ReconnectResponse();
-        res.setRoomId(req.getRoomId());
-        res.setCurrentState("game_in_progress");
-        res.setSuccess(true);
+        String roomId = req.getRoomId();
+        String playerId = req.getPlayerId();
+
+        System.out.println("🛠 reconnect_request: roomId = " + roomId + ", playerId = " + playerId);
+        if (!roomManager.existsRoom(roomId)) {
+            ReconnectResponse error = new ReconnectResponse();
+            error.setRoomId(roomId);
+            error.setSuccess(false);
+            error.setMessage("ルームが存在しません");
+
+            session.sendMessage(new TextMessage(mapper.writeValueAsString(
+                new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, error)
+            )));
+            return;
+        }
+
+        // ShogiEngine は対局開始後にのみ存在
+        ShogiEngine engine = roomManager.getEngine(roomId);
+        if (engine == null) {
+            ReconnectResponse pending = new ReconnectResponse();
+            pending.setRoomId(roomId);
+            pending.setSuccess(true);
+            pending.setMessage("対局はまだ開始していません");
+
+            session.sendMessage(new TextMessage(mapper.writeValueAsString(
+                new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, pending)
+            )));
+            return;
+        }
+
+        // 成功
+        ReconnectResponse ok = new ReconnectResponse();
+        ok.setRoomId(roomId);
+        ok.setSuccess(true);
+        ok.setMessage("再接続成功");
 
         session.sendMessage(new TextMessage(mapper.writeValueAsString(
-            new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, res)
+            new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, ok)
+        )));
+
+        GameStateDto state = new GameStateDto();
+        state.setRoomId(roomId);
+        state.setBoard(engine.getBoard());
+        state.setCapturedPieces(engine.getCapturedPieces());
+        state.setCurrentPlayerId(engine.getCurrentPlayerId());
+
+        session.sendMessage(new TextMessage(mapper.writeValueAsString(
+            new WebSocketMessage(WebSocketType.GAME_STATE, state)
         )));
     }
 

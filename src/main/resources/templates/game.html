@@ -3,33 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="#{header.game_title}"></title>
+    <title th:text="#{header.game_title}">将棋対局</title>
     <link rel="stylesheet" href="/css/game.css"/>
-    <script src="/js/game-layout.js" defer></script>
+    <script src="/js/game.js" defer></script>
 </head>
+
 <body>
 
 <div class="game-screen">
-    <h2 th:text="#{game.title}"></h2>
+    <h2 th:text="#{game.title}">対局中</h2>
 
     <!-- 操作ボタン -->
     <div class="top-buttons">
-        <div th:text="#{game.order_second}" class="gote"></div>
+        <div th:text="#{game.order_second}" class="gote">後手</div>
 
-        <form th:action="@{/review}" method="get" style="margin: 0;"></form>
-            <button id="surrender" th:text="#{game.surrender}" type="submit"></button>
+        <form th:action="@{/review}" method="get" style="margin: 0;">
+            <button id="surrender" th:text="#{game.surrender}" type="submit">投了</button>
         </form>
+    </div>
+
+    <!-- 持ち駒（後手） -->
+    <div id="gote-hand" th:attr="data-player-id=${goteId}" class="captured-pieces gote-hand">
+        後手持ち駒：-
+    </div>
+
+    <!-- 手番表示 -->
+    <div id="turn-indicator" class="turn-indicator">
+        手番：読み込み中...
     </div>
 
     <!-- 将棋盤 -->
     <div class="board" id="shogiBoard">
-    
+        <table id="shogi-board" class="board-table">
+            <tbody>
+                <tr th:each="y : ${#numbers.sequence(0,8)}">
+                    <td th:each="x : ${#numbers.sequence(0,8)}"
+                        th:attr="id='cell-' + ${x} + '-' + ${y}"
+                        class="board-cell">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- 持ち駒（先手） -->
+    <div id="sente-hand" th:attr="data-player-id=${senteId}" class="captured-pieces sente-hand">
+        先手持ち駒：-
     </div>
 
     <!-- 下部情報 -->
     <div class="bottom-info">
-        <div th:text="#{game.timelimit_left}" class="time-limit"></div>
-        <div th:text="#{game.order_first}" class="sente"></div>
+        <div th:text="#{game.timelimit_left}" class="time-limit">持ち時間：</div>
+        <div th:text="#{game.order_first}" class="sente">先手</div>
     </div>
 </div>
 

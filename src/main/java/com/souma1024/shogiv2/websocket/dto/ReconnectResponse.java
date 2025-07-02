@@ -1,4 +1,4 @@
-package com.souma1024.shogiv2.websocket;
+package com.souma1024.shogiv2.websocket.dto;
 
 import com.souma1024.shogiv2.websocket.dto.enums.WebSocketType;
 
@@ -10,4 +10,5 @@ public class ReconnectResponse {
     private String roomId;
     private String currentState;
     private boolean isSuccess;
+    private String message;
 }
