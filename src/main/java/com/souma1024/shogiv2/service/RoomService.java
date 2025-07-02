@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.souma1024.shogiv2.common.enums.RoomStatus;
+import com.souma1024.shogiv2.common.enums.PlayerStatus;
 import com.souma1024.shogiv2.dto.JoinRoomResqponse;
 import com.souma1024.shogiv2.model.Room;
 import com.souma1024.shogiv2.repository.RoomRepository;
@@ -31,11 +32,14 @@ public class RoomService {
         String roomId = generateRoomId();
         String firstPlayerId = generatePlayerId();
         RoomStatus status = RoomStatus.CREATED;
+        PlayerStatus playerStatus = PlayerStatus.READY;
 
         Room room = new Room(
             roomId,
             firstPlayerId,
             null, // プレイヤー2はまだ参加していない
+            playerStatus,
+            null,
             status,
             timeLimit,
             LocalDateTime.now()
@@ -55,6 +59,7 @@ public class RoomService {
         String secondPlayerId = generatePlayerId(); // ランダム生成メソッド
         room.setSecondPlayerId(secondPlayerId);
         room.setStatus(RoomStatus.READY);
+        room.setSecondPlayerStatus(PlayerStatus.READY);
         roomRepository.save(room);
 
         return new JoinRoomResqponse(
@@ -85,7 +90,7 @@ public class RoomService {
     }
 
     public String generateRoomId() {
-        return UUID.randomUUID().toString().substring(0, 6);
+        return UUID.randomUUID().toString().substring(0, 7);
     }
 
     public String generatePlayerId() {
