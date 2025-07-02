@@ -38,11 +38,11 @@
             <tbody>
                 <tr th:each="y : ${#numbers.sequence(0,8)}">
                     <td th:each="x : ${#numbers.sequence(0,8)}"
-                        th:attr="id='cell-' + ${x} + '-' + ${y}"
+                        th:attr="id=${'cell-' + x + '-' + y}"
                         class="board-cell">
                     </td>
                 </tr>
-            </tbody>
+            </tbody>    
         </table>
     </div>
 

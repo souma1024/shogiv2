@@ -54,6 +54,14 @@ public class ShogiEngine {
         }
     }
 
+    public GameState toGameState() {
+        return new GameState(
+            getBoard(),
+            getCapturedPieces(),
+            getCurrentPlayerId()
+        );
+    }
+
     public boolean applyMove(MoveRequest move) {
         if (!move.getPlayerId().equals(getCurrentPlayerId())) return false;
 

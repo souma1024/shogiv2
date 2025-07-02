@@ -17,8 +17,13 @@ document.getElementById("joinRoomForm").addEventListener("submit", function(even
             resultDiv.innerText = `ルームに参加しました! 持ち時間: ${data.timeLimit}分`;
 
             // 開始ボタン用データ
-            document.getElementById('startGameBtn').dataset.roomId = currentRoomId;
-            document.getElementById('startGameBtn').dataset.playerId = currentPlayerId;
+            const currentRoomId = roomId; // 入力されたroomIdをそのまま使う
+            const currentPlayerId = data.playerId; // サーバーのレスポンスに含まれていると仮定
+
+            document.getElementById("startGameBtn").dataset.roomId = currentRoomId;
+            document.getElementById("startGameBtn").dataset.playerId = currentPlayerId;
+
+
 
             // UI 更新
             document.getElementById("openModalBtn").disabled = true;
@@ -42,6 +47,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     startBtn.addEventListener('click', async () => {
         // 対局開始リクエスト送信
+
+        const roomId = startBtn.dataset.roomId;
+        const playerId = startBtn.dataset.playerId;
+
+        console.log("🎯 roomId:", roomId);
+        console.log("🎯 playerId:", playerId);
+
         const response = await fetch(`/api/rooms/${roomId}/start`, {
             method: 'POST',
             headers: {
@@ -54,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await response.json();
 
             // 対局が始まっている or すでに開始可能なら遷移
-            if (data.status === 'started' || data.status === 'waiting') {
+            if (data.status === 'ready' || data.status === 'waiting') {
                 window.location.href = `/games/${roomId}?playerId=${playerId}`;
             } else {
                 message.textContent = '状態が不明です。もう一度お試しください。';

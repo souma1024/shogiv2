@@ -10,10 +10,14 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.souma1024.shogiv2.common.enums.PlayerStatus;
+import com.souma1024.shogiv2.common.enums.RoomStatus;
+import com.souma1024.shogiv2.domain.GameState;
 import com.souma1024.shogiv2.domain.Player;
 import com.souma1024.shogiv2.domain.ShogiEngine;
 import com.souma1024.shogiv2.dto.StartGameRequest;
-import com.souma1024.shogiv2.dto.StartGameResponse;
+import com.souma1024.shogiv2.model.Room;
+import com.souma1024.shogiv2.repository.RoomRepository;
 import com.souma1024.shogiv2.websocket.dto.*;
 import com.souma1024.shogiv2.websocket.dto.enums.GameOverReason;
 import com.souma1024.shogiv2.websocket.dto.enums.WebSocketType;
@@ -22,6 +26,15 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
 
     private final ObjectMapper mapper = new ObjectMapper();
     private final RoomManager roomManager = RoomManager.getInstance();
+    
+    private final RoomRepository roomRepository;
+
+    
+    public ShogiWebSocketHandler(RoomRepository roomRepository) {
+        this.roomRepository = roomRepository;
+    }
+
+
 
     @Override
     public void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) throws Exception {
@@ -64,26 +77,32 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         String roomId = req.getRoomId();
         String playerId = req.getPlayerId();
 
-        Player player = roomManager.getPlayerById(roomId, playerId);
-        if (player == null) {
-            sendError(session, roomId, "無効なプレイヤーIDです", 1006);
-            return;
+        Room room = roomRepository.findById(roomId)
+            .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        if (playerId.equals(room.getFirstPlayerId())) {
+            room.setFirstPlayerStatus(PlayerStatus.ACTIVE);
+        } else if (playerId.equals(room.getSecondPlayerId())) {
+            room.setSecondPlayerStatus(PlayerStatus.ACTIVE);
         }
 
-        boolean started = roomManager.tryStartGame(roomId);
+        if (room.getFirstPlayerStatus() == PlayerStatus.ACTIVE &&
+            room.getSecondPlayerStatus() == PlayerStatus.ACTIVE) {
 
-        if (started) {
-            StartGameResponse res = new StartGameResponse();
-            res.setRoomId(roomId);
-            res.setStatus("started");
+            room.setStatus(RoomStatus.ACTIVE);
+            roomRepository.save(room);
 
-            WebSocketMessage msg = new WebSocketMessage(WebSocketType.START_GAME_RESPONSE, res);
+            // 対局開始データを送信（仮：ShogiEngineの状態など）
 
-            // 💡 対局開始通知をルーム内の全セッションに送信
-            broadcastToRoom(roomId, msg);
+            ShogiEngine engine = roomManager.getOrCreateEngine(roomId, room.getFirstPlayerId(), room.getSecondPlayerId());
+
+
+            GameState state = engine.toGameState();
+            
+            roomManager.broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.GAME_STATE, state));
         } else {
-            // まだもう一人が準備していない場合 → 応答不要（または待機通知も可能）
-            System.out.println("⚠️ 片方のみ startGameRequest。もう一人待機中。");
+            // 片方だけACTIVEの場合も保存
+            roomRepository.save(room);
         }
     }
 

@@ -1,23 +1,16 @@
 .board {
-  display: grid;
-  grid-template-columns: repeat(9, 40px);
-  grid-template-rows: repeat(9, 40px);
-  gap: 1px;
-  width: fit-content;
-  margin: 20px auto;
-  background-color: #000; /* 枠線用 */
+  border-collapse: collapse;
 }
 
-.cell {
+.board-cell {
   width: 40px;
   height: 40px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 16px;
-  font-weight: bold;
-  background-color: #f4b860; /* 将棋盤風の色 */
-  cursor: pointer;
+  border: 1px solid black;
+  text-align: center;
+  vertical-align: middle;
+  font-size: 24px;
+  background-color: #fceabb; /* 明るい将棋盤風カラー */
+  color: #000; /* 黒文字 */
 }
 
 .game-screen {
