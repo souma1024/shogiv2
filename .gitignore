@@ -33,4 +33,4 @@ build/
 .vscode/
 
 ### images ###
-src/main/resources/static/images/piece/
+src/main/resources/static/images/*
