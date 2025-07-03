@@ -96,12 +96,11 @@ function getPieceImage(piece) {
 
     const abs = Math.abs(piece);
     const isPromoted = abs >= 100 && abs < 200;
-    const isSente = piece > 0;
 
     let base = isPromoted ? abs - 100 : abs;
     let name = {
         1: "fu", 2: "kyo", 3: "kei", 4: "gin", 5: "kin",
-        6: "kaku", 7: "hisya", 8: "uma", 9: "ryu", 77: isSente ? "ou" : "gyoku"
+        6: "kaku", 7: "hisya", 8: "uma", 9: "ryu", 77: "gyoku"
     }[base];
 
     if (!name) return "";
@@ -110,10 +109,10 @@ function getPieceImage(piece) {
         name = "promoted_" + name;
     }
 
-    const side = isSente ? "sente" : "gote";
-    const rotateStyle = isSente ? "" : "transform: rotate(180deg);";
+    if (piece > 0) {
+        return `<img src="/images/piece/sente_${name}.png" class="piece-image sente-image" />`;
+    } else {
+        return `<img src="/images/piece/gote_${name}.png" class="piece-image gote-image" />`;
+    }
 
-    
-
-    return `<img src="/images/piece/sente_${name}.png" class="piece-image" style="${rotateStyle}">`;
 }
