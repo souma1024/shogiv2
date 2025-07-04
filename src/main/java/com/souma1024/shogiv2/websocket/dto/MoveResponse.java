@@ -13,4 +13,5 @@ public class MoveResponse {
     private boolean promotion;
     private boolean isSuccess;
     private String nextPlayerId;
+    private CapturedPiece captured; // nullable
 }

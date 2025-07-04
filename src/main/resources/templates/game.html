@@ -27,8 +27,13 @@
             <p class="debug">gote</p>
         </div>
         
-        <div id="gote-hand" th:attr="data-player-id=${goteId}" class="captured-pieces gote-hand">
+        <div class="captured-pieces gote-hand">
+            <div th:each="i : ${#numbers.sequence(1,7)}"
+                th:attr="id=${'capturedCell-' + goteId + '-' + i}"
+                class="captured-cell">
+            </div>
         </div>
+
         <!-- 将棋盤 -->
         <div id="shogi-board" class="board">
             <table class="board-table">
@@ -44,8 +49,11 @@
         </div>
 
         <!-- 持ち駒（先手） -->
-        <div id="sente-hand" th:attr="data-player-id=${senteId}" class="captured-pieces sente-hand">
-            
+        <div class="captured-pieces sente-hand">
+            <div th:each="i : ${#numbers.sequence(1,7)}"
+                th:attr="id=${'capturedCell-' + senteId + '-' + i}"
+                class="captured-cell">
+            </div>
         </div>
 
         
