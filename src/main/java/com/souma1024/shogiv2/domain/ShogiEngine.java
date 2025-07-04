@@ -63,10 +63,19 @@ public class ShogiEngine {
     }
 
     public boolean applyMove(MoveRequest move) {
-        if (!move.getPlayerId().equals(getCurrentPlayerId())) return false;
 
-        // 不正手チェック
-        if (!isValidMove(move)) return false;
+        System.out.println("➡️ applyMove called by " + move.getPlayerId());
+        System.out.println("👤 現在の手番: " + getCurrentPlayerId());
+
+        if (!move.getPlayerId().equals(getCurrentPlayerId())) {
+            System.out.println("❌ 手番ではないプレイヤーの手です");
+            return false;
+        }
+
+        if (!isValidMove(move)) {
+            System.out.println("❌ 不正な手です");
+            return false;
+        }
 
         int[] to = move.getTo();
         int captured = getPieceAt(to[0], to[1]);
@@ -80,6 +89,7 @@ public class ShogiEngine {
 
         // 手番交代
         turn = (turn == PlayerSide.SENTE) ? PlayerSide.GOTE : PlayerSide.SENTE;
+        System.out.println("✅ 手番交代: 次は " + turn);
 
         return true;
     }
@@ -146,6 +156,10 @@ public class ShogiEngine {
 
     public String getCurrentPlayerId() {
         return (turn == PlayerSide.SENTE) ? senteId : goteId;
+    }
+
+    public String getNextPlayerId() {
+        return (turn == PlayerSide.SENTE) ? goteId : senteId;
     }
 
     public int[][] getBoard() {

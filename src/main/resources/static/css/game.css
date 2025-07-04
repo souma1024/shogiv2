@@ -72,3 +72,7 @@
 .movable-highlight {
     background-color: rgba(0, 255, 0, 0.3); /* 半透明の緑 */
 }
+
+.board-disabled {
+  pointer-events: none;
+}

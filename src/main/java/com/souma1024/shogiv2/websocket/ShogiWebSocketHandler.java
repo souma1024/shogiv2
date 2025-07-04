@@ -147,7 +147,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        // MoveRequest を仮生成（piece を渡すため）
+        // MoveQuery を仮生成（piece を渡すため）
         MovableQuery query = new MovableQuery();
         query.setX(fromX);
         query.setY(fromY);
@@ -200,6 +200,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         res.setPromotion(req.isPromotion());
         res.setSuccess(success);
         res.setNextPlayerId(engine.getCurrentPlayerId());
+        System.out.println("nextplayerID: " + engine.getCurrentPlayerId());
 
         if (engine.isCheckmate(engine.getTurnPlayer())) {
             GameOverResponse over = new GameOverResponse();

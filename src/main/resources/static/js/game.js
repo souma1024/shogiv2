@@ -5,7 +5,7 @@ let currentBoard = [];
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = location.pathname.split("/").pop();
 const playerId = urlParams.get("playerId");
-
+let currentTurnPlayerId = null;
 
 
 function setupWebSocket(roomId, playerId) {
@@ -35,6 +35,10 @@ function setupWebSocket(roomId, playerId) {
             const state = msg.payload;
             drawBoard(state.board);
             setupPieceClickHandlers();
+            currentTurnPlayerId = state.senteId;
+            if (myPlayerId !== currentTurnPlayerId) {
+                document.getElementById("shogi-board").classList.add("board-disabled");
+            } 
         }
 
         if (msg.type === "game_state") {
@@ -50,7 +54,6 @@ function setupWebSocket(roomId, playerId) {
         if (msg.type == "move_response") {
             handleMoveResponse(msg.payload);
         }
-
     };
 }
 
@@ -61,8 +64,15 @@ function handleMoveResponse(res) {
         return;
     }
 
+    if (myPlayerId !== currentTurnPlayerId) {
+        document.getElementById("shogi-board").classList.add("board-disabled");
+    } else {
+        document.getElementById("shogi-board").classList.remove("board-disabled");
+    }
+
     applyMoveToBoard(res.from, res.to, res.piece, res.promotion);
     drawCell(res.from, res.to);
+    currentTurnPlayerId = res.nextPlayerId;
     resetSelectionAndHighlight();
 }
 
@@ -223,4 +233,13 @@ function highlightMovableCells(movableList) {
             cell.classList.add("movable-highlight");
         }
     });
+}
+
+function updateTurnIndicator(turnPlayerId) {
+    const label = document.getElementById("turn-indicator");
+    if (label) {
+        label.innerText = (turnPlayerId === myPlayerId)
+            ? "あなたの手番です"
+            : "相手の手番です";
+    }
 }
