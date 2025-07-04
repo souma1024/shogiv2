@@ -12,7 +12,7 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.souma1024.shogiv2.common.enums.PlayerStatus;
-import com.souma1024.shogiv2.common.enums.RoomStatus;
+import com.souma1024.shogiv2.domain.ApplyMoveResult;
 import com.souma1024.shogiv2.domain.GameState;
 import com.souma1024.shogiv2.domain.MovableQuery;
 import com.souma1024.shogiv2.domain.Player;
@@ -190,7 +190,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        boolean success = engine.applyMove(req);
+        ApplyMoveResult result = engine.applyMove(req);
 
         MoveResponse res = new MoveResponse();
         res.setRoomId(roomId);
@@ -199,8 +199,9 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         res.setTo(req.getTo());
         res.setPiece(req.getPiece());
         res.setPromotion(req.isPromotion());
-        res.setSuccess(success);
+        res.setSuccess(result.isSuccess());
         res.setNextPlayerId(engine.getCurrentPlayerId());
+        res.setCaptured(result.getCaptured());
         System.out.println("nextplayerID: " + engine.getCurrentPlayerId());
 
         if (engine.isCheckmate(engine.getTurnPlayer())) {

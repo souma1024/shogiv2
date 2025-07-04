@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.souma1024.shogiv2.websocket.dto.CapturedPiece;
 import com.souma1024.shogiv2.websocket.dto.MoveRequest;
 
 public class ShogiEngine {
@@ -63,30 +64,34 @@ public class ShogiEngine {
         );
     }
 
-    public boolean applyMove(MoveRequest move) {
-
-        System.out.println("➡️ applyMove called by " + move.getPlayerId());
-        System.out.println("👤 現在の手番: " + getCurrentPlayerId());
+    public ApplyMoveResult applyMove(MoveRequest move) {
 
         if (!move.getPlayerId().equals(getCurrentPlayerId())) {
             System.out.println("❌ 手番ではないプレイヤーの手です");
-            return false;
+            return new ApplyMoveResult(false, null);
         }
 
         if (!isValidMove(move)) {
             System.out.println("❌ 不正な手です");
-            return false;
+            return new ApplyMoveResult(false, null);
         }
 
         if (isSame(move)) {
-            return false;
+            return new ApplyMoveResult(false, null);
         }
+
+        CapturedPiece capturedPiece = null; 
 
         int[] to = move.getTo();
         int captured = getPieceAt(to[0], to[1]);
         if (captured != 0) {
             int toHand = PieceUtil.toUnpromoted(captured) * -1;
             capturedPieces.get(getCurrentPlayerId()).add(toHand);
+
+            capturedPiece = new CapturedPiece();
+            capturedPiece.setOwner(move.getPlayerId());
+            capturedPiece.setPiece(move.getPiece());
+            capturedPiece.setCount(1);
         }
 
         // 駒を動かす（成り処理は PieceUtil 内で判断）
@@ -96,7 +101,7 @@ public class ShogiEngine {
         turn = (turn == PlayerSide.SENTE) ? PlayerSide.GOTE : PlayerSide.SENTE;
         System.out.println("✅ 手番交代: 次は " + turn);
 
-        return true;
+        return new ApplyMoveResult(true, capturedPiece);
     }
 
     private boolean isValidMove(MoveRequest move) {

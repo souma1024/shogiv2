@@ -46,7 +46,9 @@ function setupWebSocket(roomId, playerId) {
         }
 
         if (msg.type == "move_response") {
-            handleMoveResponse(msg.payload);
+            const payload = msg.payload
+            handleMoveResponse(payload);
+            applyCapturedPieces(payload.captured);
         }
     };
 }
@@ -120,6 +122,20 @@ function drawBoard(board, isSente) {
 document.addEventListener("DOMContentLoaded", () => {
     setupWebSocket(roomId, playerId);
 });
+
+function applyCapturedPieces(captured) {
+    if (captured === null) return;
+    const kind = captured.piece > 0 ? captured.piece : -1 * captured.piece;
+    const capturedCellId = `capturedCell-${captured.owner}-${kind}`;
+    const cell = document.getElementById(capturedCellId);
+    if (!cell) {
+        console.warn("⚠️ 持ち駒セルが見つかりません:", capturedCellId);
+        return;
+    }
+    cell.innerHTML = captured.piece === 0 ? "" : getPieceImage(captured.piece);
+    document.getElementById(capturedCellId).addEventListener("click", () => {   
+    });
+}
 
 function getPieceImage(piece) {
     if (piece === 0) return "";
@@ -222,7 +238,6 @@ function highlightMovableCells(movableList) {
     document.querySelectorAll(".board-cell").forEach(cell => {
         cell.classList.remove("movable-highlight");
     });
-    console.log("hehehehe");
     // 新しく合法手セルにハイライト追加
     movableList.forEach(([x, y]) => {
         const cell = document.getElementById(`cell-${x}-${y}`);
@@ -230,13 +245,4 @@ function highlightMovableCells(movableList) {
             cell.classList.add("movable-highlight");
         }
     });
-}
-
-function updateTurnIndicator(turnPlayerId) {
-    const label = document.getElementById("turn-indicator");
-    if (label) {
-        label.innerText = (turnPlayerId === myPlayerId)
-            ? "あなたの手番です"
-            : "相手の手番です";
-    }
 }
