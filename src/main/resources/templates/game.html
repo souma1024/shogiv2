@@ -22,6 +22,7 @@
         </form>
     </div>
 
+    
     <!-- 持ち駒（後手） -->
     <div id="gote-hand" th:attr="data-player-id=${goteId}" class="captured-pieces gote-hand">
         後手持ち駒：-
@@ -33,8 +34,8 @@
     </div>
 
     <!-- 将棋盤 -->
-    <div class="board" id="shogiBoard">
-        <table id="shogi-board" class="board-table">
+    <div id="shogi-board" class="board">
+        <table class="board-table">
             <tbody>
                 <tr th:each="y : ${#numbers.sequence(0,8)}">
                     <td th:each="x : ${#numbers.sequence(0,8)}"
