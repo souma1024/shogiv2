@@ -1,6 +1,7 @@
 package com.souma1024.shogiv2.domain;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +75,10 @@ public class ShogiEngine {
 
         if (!isValidMove(move)) {
             System.out.println("❌ 不正な手です");
+            return false;
+        }
+
+        if (isSame(move)) {
             return false;
         }
 
@@ -177,4 +182,9 @@ public class ShogiEngine {
     private int getPieceAt(int x, int y) {
         return board[y][x];
     }
+
+    private boolean isSame(MoveRequest request) {
+        return Arrays.equals(request.getFrom(), request.getTo());
+    }
+
 }

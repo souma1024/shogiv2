@@ -41,7 +41,7 @@ function setupWebSocket(roomId, playerId) {
 
         if (msg.type === "movable_position_response") {
             const payload = msg.payload;
-            console.log("受信：move_postition_response");
+            console.log("受信：move_postition_response", payload);
             highlightMovableCells(payload.movable); // この関数を後述
         }
 
@@ -52,7 +52,7 @@ function setupWebSocket(roomId, playerId) {
 }
 
 function handleMoveResponse(res) {
-    console.log("受信：move_response");
+    console.log("受信：move_response", res);
     if (!res.success) {
         resetSelectionAndHighlight();
         return;
@@ -112,7 +112,7 @@ function drawBoard(board, isSente) {
         }
     }
     if (!isSente) {
-        document.getElementById("shogi-board").classList.add("gote-board");
+        document.getElementById("game-layout").classList.add("gote-board");
     }
 }
 
