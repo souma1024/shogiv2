@@ -61,16 +61,15 @@ function handleMoveResponse(res) {
         return;
     }
 
-    applyMoveToBoard(res.from, res.to, res.kind, res.promotion);
+    applyMoveToBoard(res.from, res.to, res.piece, res.promotion);
     drawCell(res.from, res.to);
     resetSelectionAndHighlight();
 }
 
-function applyMoveToBoard(from, to, kind, promotion) {
+function applyMoveToBoard(from, to, piece, promotion) {
     const [fromX, fromY] = from;
     const [toX, toY] = to;
 
-    let piece = currentBoard[fromY][fromX];
     currentBoard[fromY][fromX] = 0;
 
     if (promotion) {
@@ -167,7 +166,6 @@ function handleFirstClick(clickedPos) {
 
     const [x, y] = clickedPos;
     const piece = currentBoard[y][x];
-    const kind = Math.abs(piece);
     const promotion = piece >= 100;
 
     const request = {
@@ -176,7 +174,7 @@ function handleFirstClick(clickedPos) {
             roomId,
             playerId: myPlayerId,
             from: clickedPos,
-            kind,
+            piece,
             promotion
         }
     };
@@ -190,7 +188,6 @@ function handleSecondClick(clickedPos) {
     const to = clickedPos;
 
     const piece = currentBoard[from[1]][from[0]];
-    const kind = Math.abs(piece);
     const promotion = piece >= 100;
 
     const moveMsg = {
@@ -200,7 +197,7 @@ function handleSecondClick(clickedPos) {
             playerId: myPlayerId,
             from,
             to,
-            kind,
+            piece,
             promotion
         }
     };
