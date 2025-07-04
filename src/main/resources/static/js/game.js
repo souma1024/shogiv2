@@ -132,7 +132,7 @@ function applyCapturedPieces(captured) {
         console.warn("⚠️ 持ち駒セルが見つかりません:", capturedCellId);
         return;
     }
-    cell.innerHTML = captured.piece === 0 ? "" : getPieceImage(captured.piece);
+    cell.innerHTML = captured.piece === 0 ? "" : getPieceImage(-1 * captured.piece);
     document.getElementById(capturedCellId).addEventListener("click", () => {   
     });
 }

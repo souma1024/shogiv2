@@ -90,7 +90,7 @@ public class ShogiEngine {
 
             capturedPiece = new CapturedPiece();
             capturedPiece.setOwner(move.getPlayerId());
-            capturedPiece.setPiece(move.getPiece());
+            capturedPiece.setPiece(captured);
             capturedPiece.setCount(1);
         }
 
