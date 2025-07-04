@@ -1,16 +1,12 @@
 package com.souma1024.shogiv2.websocket.dto;
 
-
 import lombok.Data;
 
 @Data
-public class MoveResponse {
+public class MovablePositionResponse {
     private String roomId;
     private String playerId;
     private int[] from;
-    private int[] to;
     private int kind;
-    private boolean promotion;
-    private boolean isSuccess;
-    private String nextPlayerId;
+    private int[][] movable;
 }
