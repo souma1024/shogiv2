@@ -1,21 +1,16 @@
 package com.souma1024.shogiv2.dto;
 
+import java.util.List;
+import java.util.Map;
+
 import lombok.Data;
 
 @Data
 public class StartGameResponse {
     private String roomId;
-    private String status; // "waiting_for_opponent" または "started"
+    private int[][] board; // 盤面（9x9）
+    private Map<String, List<Integer>> capturedPieces; // 持ち駒（playerIdごと）
+    private String senteId;
+    private String goteId;
     private String playerId;
-
-    public StartGameResponse() {
-        // デフォルトコンストラクタ
-    }
-
-    public StartGameResponse(String roomId, String status) {
-        this.roomId = roomId;
-        this.status = status;
-    }
-
-
 }

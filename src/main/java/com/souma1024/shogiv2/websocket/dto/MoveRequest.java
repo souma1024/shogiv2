@@ -12,6 +12,6 @@ public class MoveRequest {
     private String playerId;
     private int[] from;
     private int[] to;
-    private int kind;
+    private int piece;
     private boolean promotion;
 }

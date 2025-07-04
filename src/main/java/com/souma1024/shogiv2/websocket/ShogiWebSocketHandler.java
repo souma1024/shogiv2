@@ -1,5 +1,6 @@
 package com.souma1024.shogiv2.websocket;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.lang.NonNull;
@@ -13,9 +14,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.souma1024.shogiv2.common.enums.PlayerStatus;
 import com.souma1024.shogiv2.common.enums.RoomStatus;
 import com.souma1024.shogiv2.domain.GameState;
+import com.souma1024.shogiv2.domain.MovableQuery;
 import com.souma1024.shogiv2.domain.Player;
+import com.souma1024.shogiv2.domain.PlayerSide;
 import com.souma1024.shogiv2.domain.ShogiEngine;
 import com.souma1024.shogiv2.dto.StartGameRequest;
+import com.souma1024.shogiv2.dto.StartGameResponse;
 import com.souma1024.shogiv2.model.Room;
 import com.souma1024.shogiv2.repository.RoomRepository;
 import com.souma1024.shogiv2.websocket.dto.*;
@@ -50,6 +54,11 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
                 case START_GAME_REQUEST -> {
                     StartGameRequest req = mapper.treeToValue(payload, StartGameRequest.class);
                     handleStartGameRequest(req, session);
+                }
+
+                case MOVABLE_POSITION_REQUEST -> {
+                    MovablePositionRequest req = mapper.treeToValue(payload, MovablePositionRequest.class);
+                    handleMovablePositionRequest(req, session);
                 }
 
                 case MOVE_REQUEST -> {
@@ -89,21 +98,78 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         if (room.getFirstPlayerStatus() == PlayerStatus.ACTIVE &&
             room.getSecondPlayerStatus() == PlayerStatus.ACTIVE) {
 
-            room.setStatus(RoomStatus.ACTIVE);
-            roomRepository.save(room);
-
-            // 対局開始データを送信（仮：ShogiEngineの状態など）
-
             ShogiEngine engine = roomManager.getOrCreateEngine(roomId, room.getFirstPlayerId(), room.getSecondPlayerId());
-
-
             GameState state = engine.toGameState();
+
+            StartGameResponse response = new StartGameResponse();
+            response.setRoomId(roomId);
+            response.setBoard(state.getBoard());
+            response.setCapturedPieces(state.getCapturedPieces());
+            response.setSenteId(room.getFirstPlayerId());
+            response.setGoteId(room.getSecondPlayerId());
+
+            roomManager.broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.START_GAME_RESPONSE, response));
             
-            roomManager.broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.GAME_STATE, state));
         } else {
             // 片方だけACTIVEの場合も保存
             roomRepository.save(room);
         }
+    }
+
+    private void handleMovablePositionRequest(MovablePositionRequest req, WebSocketSession session) throws Exception {
+        String roomId = req.getRoomId();
+        String playerId = req.getPlayerId();
+        int[] from = req.getFrom();
+        int piece = req.getPiece();
+        boolean promotion = req.isPromotion();
+
+        // 盤座標チェック
+        if (from == null || from.length != 2) {
+            System.out.printf("無効な from 座標が指定されました: {}", Arrays.toString(from));
+            return;
+        }
+
+        int fromX = from[0];
+        int fromY = from[1];
+
+        // ShogiEngine を取得
+        ShogiEngine engine = RoomManager.getInstance().getEngine(roomId);
+        if (engine == null) {
+            System.out.printf("ShogiEngine が見つかりません: roomId={}", roomId);
+            return;
+        }
+
+        // プレイヤーの駒でなければ無視
+        boolean isSente = (playerId.equals(engine.getCurrentPlayerId()) && engine.getTurnPlayer() == PlayerSide.SENTE);
+        boolean isGote  = (playerId.equals(engine.getCurrentPlayerId()) && engine.getTurnPlayer() == PlayerSide.GOTE);
+        if ((isSente && piece < 0) || (isGote && piece > 0)) {
+            System.out.println("他人の駒を操作しようとしました");
+            return;
+        }
+
+        // MoveQuery を仮生成（piece を渡すため）
+        MovableQuery query = new MovableQuery();
+        query.setX(fromX);
+        query.setY(fromY);
+        query.setPiece(piece);
+        query.setPlayerId(playerId);
+        query.setPromotion(promotion);
+        query.setTurn(null);
+        // 合法手を取得
+        List<int[]> movable = engine.getMovablePositions(query);
+
+        // レスポンスDTO作成
+        MovablePositionResponse response = new MovablePositionResponse();
+        response.setRoomId(roomId);
+        response.setPlayerId(playerId);
+        response.setFrom(from);
+        response.setPiece(piece);
+        response.setMovable(movable);
+
+        // ラップして送信
+        WebSocketMessage wsMsg = new WebSocketMessage(WebSocketType.MOVABLE_POSITION_RESPONSE, response);
+        String json = mapper.writeValueAsString(wsMsg);
+        session.sendMessage(new TextMessage(json));
     }
 
     private void handleMoveRequest(MoveRequest req, WebSocketSession session) throws Exception {
@@ -130,10 +196,11 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         res.setPlayerId(playerId);
         res.setFrom(req.getFrom());
         res.setTo(req.getTo());
-        res.setKind(req.getKind());
+        res.setPiece(req.getPiece());
         res.setPromotion(req.isPromotion());
         res.setSuccess(success);
         res.setNextPlayerId(engine.getCurrentPlayerId());
+        System.out.println("nextplayerID: " + engine.getCurrentPlayerId());
 
         if (engine.isCheckmate(engine.getTurnPlayer())) {
             GameOverResponse over = new GameOverResponse();

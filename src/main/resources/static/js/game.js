@@ -1,10 +1,17 @@
 let myPlayerId = ""; // ページ読み込み時にURLなどからセットする
 socket = null;
+let selectedFrom = null;
+let currentBoard = [];
+const urlParams = new URLSearchParams(window.location.search);
+const roomId = location.pathname.split("/").pop();
+const playerId = urlParams.get("playerId");
+let currentTurnPlayerId = null;
+
 
 function setupWebSocket(roomId, playerId) {
     myPlayerId = playerId;
 
-    const socket = new WebSocket(`ws://${location.host}/ws/shogi?roomId=${roomId}&playerId=${playerId}`);
+    socket = new WebSocket(`ws://${location.host}/ws/shogi?roomId=${roomId}&playerId=${playerId}`);
 
     socket.onopen = () => {
         console.log("✅Websocket 接続完了");
@@ -24,16 +31,85 @@ function setupWebSocket(roomId, playerId) {
         const msg = JSON.parse(event.data);
         console.log("📥 メッセージ受信:", msg);
 
+        if (msg.type === "start_game_response") {
+            const state = msg.payload;
+            drawBoard(state.board);
+            setupPieceClickHandlers();
+            currentTurnPlayerId = state.senteId;
+            if (myPlayerId !== currentTurnPlayerId) {
+                document.getElementById("shogi-board").classList.add("board-disabled");
+            } 
+        }
+
         if (msg.type === "game_state") {
             const state = msg.payload;
             drawBoard(state.board);
-            updateCapturedPieces(state.capturedPieces);
-            updateTurnIndicator(state.currentPlayerId);
+        }
+
+        if (msg.type === "movable_position_response") {
+            const payload = msg.payload;
+            highlightMovableCells(payload.movable); // この関数を後述
+        }
+
+        if (msg.type == "move_response") {
+            handleMoveResponse(msg.payload);
         }
     };
 }
 
+function handleMoveResponse(res) {
+    console.log("受信：move_response");
+    if (!res.success) {
+        resetSelectionAndHighlight();
+        return;
+    }
+
+    if (myPlayerId !== currentTurnPlayerId) {
+        document.getElementById("shogi-board").classList.add("board-disabled");
+    } else {
+        document.getElementById("shogi-board").classList.remove("board-disabled");
+    }
+
+    applyMoveToBoard(res.from, res.to, res.piece, res.promotion);
+    drawCell(res.from, res.to);
+    currentTurnPlayerId = res.nextPlayerId;
+    resetSelectionAndHighlight();
+}
+
+function applyMoveToBoard(from, to, piece, promotion) {
+    const [fromX, fromY] = from;
+    const [toX, toY] = to;
+
+    currentBoard[fromY][fromX] = 0;
+
+    if (promotion) {
+        piece = piece + 100 * Math.sign(piece); // 成りを反映
+    }
+
+    currentBoard[toY][toX] = piece;
+}
+
+function resetSelectionAndHighlight() {
+    selectedFrom = null;
+    document.querySelectorAll(".board-cell").forEach(c => c.classList.remove("movable-highlight"));
+}
+
+function drawCell(from, to) {
+    const [fromX, fromY] = from;
+    const [toX, toY] = to;
+
+    const fromCell = document.getElementById(`cell-${fromX}-${fromY}`);
+    const toCell = document.getElementById(`cell-${toX}-${toY}`);
+
+    if (fromCell) fromCell.innerHTML = "";
+    if (toCell) {
+        const piece = currentBoard[toY][toX];
+        toCell.innerHTML = getPieceImage(piece);
+    }
+}
+
 function drawBoard(board) {
+    currentBoard = board;
     for (let y = 0; y < 9; y++) {
         for (let x = 0; x < 9; x++) {
             const cellId = `cell-${x}-${y}`;
@@ -49,45 +125,8 @@ function drawBoard(board) {
     }
 }
 
-function updateCapturedPieces(captured) {
-    const sente = document.getElementById("sente-hand");
-    const gote = document.getElementById("gote-hand");
-
-    const senteId = sente.dataset.playerId;
-    const goteId = gote.dataset.playerId;
-
-    sente.textContent = "先手持ち駒：" + (captured[senteId]?.map(getPieceName).join(" ") || "-");
-    gote.textContent = "後手持ち駒：" + (captured[goteId]?.map(getPieceName).join(" ") || "-");
-}
-
-function updateTurnIndicator(currentPlayerId) {
-    const indicator = document.getElementById("turn-indicator");
-    indicator.textContent = currentPlayerId === myPlayerId
-        ? "あなたの番です"
-        : "相手の番です";
-}
-
-function getPieceName(piece) {
-    const abs = Math.abs(piece);
-    const promoted = abs >= 100 && abs < 200;
-    const base = promoted ? (piece > 0 ? piece - 100 : piece + 100) : piece;
-
-    const names = {
-        1: "歩", 2: "香", 3: "桂", 4: "銀", 5: "金",
-        6: "角", 7: "飛", 8: "馬", 9: "龍", 77: piece > 0 ? "王" : "玉"
-    };
-
-    let name = names[Math.abs(base)] || "？";
-    if (promoted && base !== 5) name = "成" + name;
-    return name;
-}
-
 // ページ読み込み後にWebSocket接続を開始
 document.addEventListener("DOMContentLoaded", () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomId = location.pathname.split("/").pop();
-    const playerId = urlParams.get("playerId");
-
     setupWebSocket(roomId, playerId);
 });
 
@@ -115,4 +154,92 @@ function getPieceImage(piece) {
         return `<img src="/images/piece/gote_${name}.png" class="piece-image gote-image" />`;
     }
 
+}
+
+function setupPieceClickHandlers() {
+    document.querySelectorAll(".board-cell").forEach(cell => {
+        cell.addEventListener("click", () => {
+            const [_, x, y] = cell.id.split("-").map(Number);
+            const clickedPos = [x, y];
+
+            if (selectedFrom === null) {
+                handleFirstClick(clickedPos);
+            } else {
+                handleSecondClick(clickedPos);
+            }
+        });
+    })
+}
+    
+function handleFirstClick(clickedPos) {
+    selectedFrom = clickedPos;
+
+    const [x, y] = clickedPos;
+    const piece = currentBoard[y][x];
+    const promotion = piece >= 100;
+
+    const request = {
+        type: "movable_position_request",
+        payload: {
+            roomId,
+            playerId: myPlayerId,
+            from: clickedPos,
+            piece,
+            promotion
+        }
+    };
+
+    socket.send(JSON.stringify(request));
+    console.log("📤 movable_position_request:", request);
+}
+
+function handleSecondClick(clickedPos) {
+    const from = selectedFrom;
+    const to = clickedPos;
+
+    const piece = currentBoard[from[1]][from[0]];
+    const promotion = piece >= 100;
+
+    const moveMsg = {
+        type: "move_request",
+        payload: {
+            roomId,
+            playerId: myPlayerId,
+            from,
+            to,
+            piece,
+            promotion
+        }
+    };
+
+    socket.send(JSON.stringify(moveMsg));
+    console.log("📤 move_request:", moveMsg);
+
+    // 状態リセット
+    selectedFrom = null;
+    document.querySelectorAll(".board-cell").forEach(c => c.classList.remove("movable-highlight"));
+}
+
+function highlightMovableCells(movableList) {
+    // 既存ハイライトをすべてクリア
+    document.querySelectorAll(".board-cell").forEach(cell => {
+        cell.classList.remove("movable-highlight");
+    });
+
+    // 新しく合法手セルにハイライト追加
+    movableList.forEach(([x, y]) => {
+        const cell = document.getElementById(`cell-${x}-${y}`);
+        if (cell) {
+            cell.classList.add("movable-highlight");
+        }
+    });
+}
+
+function updateTurnIndicator(turnPlayerId) {
+    const label = document.getElementById("turn-indicator");
+    if (label) {
+        label.innerText = (turnPlayerId === myPlayerId)
+            ? "あなたの手番です"
+            : "相手の手番です";
+    }
 }

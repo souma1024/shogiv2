@@ -124,7 +124,7 @@ public class RoomManager {
 
     public ShogiEngine getEngine(String roomId) {
         return engineMap.get(roomId);
-    }
+    }   
 
     public Player[] getPlayers(String roomId) {
         return playerMap.getOrDefault(roomId, new Player[2]);

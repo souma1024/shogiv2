@@ -23,32 +23,32 @@ public class ShogiEngine {
     }
 
     private void initializeBoard() {
-        board[0][0] = Piece.KY_GOTE;
-        board[0][1] = Piece.KE_GOTE;
-        board[0][2] = Piece.GI_GOTE;
-        board[0][3] = Piece.KI_GOTE;
-        board[0][4] = Piece.OU_GOTE;
-        board[0][5] = Piece.KI_GOTE;
-        board[0][6] = Piece.GI_GOTE;
-        board[0][7] = Piece.KE_GOTE;
-        board[0][8] = Piece.KY_GOTE;
-        board[1][1] = Piece.HI_GOTE;
-        board[1][7] = Piece.KA_GOTE;
+        board[0][0] = Piece.KYO_GOTE;
+        board[0][1] = Piece.KEI_GOTE;
+        board[0][2] = Piece.GIN_GOTE;
+        board[0][3] = Piece.KIN_GOTE;
+        board[0][4] = Piece.GYOKU_GOTE;
+        board[0][5] = Piece.KIN_GOTE;
+        board[0][6] = Piece.GIN_GOTE;
+        board[0][7] = Piece.KEI_GOTE;
+        board[0][8] = Piece.KYO_GOTE;
+        board[1][1] = Piece.HISYA_GOTE;
+        board[1][7] = Piece.KAKU_GOTE;
         for (int i = 0; i < 9; i++) {
             board[2][i] = Piece.FU_GOTE;
         }
 
-        board[8][0] = Piece.KY_SENTE;
-        board[8][1] = Piece.KE_SENTE;
-        board[8][2] = Piece.GI_SENTE;
-        board[8][3] = Piece.KI_SENTE;
-        board[8][4] = Piece.OU_SENTE;
-        board[8][5] = Piece.KI_SENTE;
-        board[8][6] = Piece.GI_SENTE;
-        board[8][7] = Piece.KE_SENTE;
-        board[8][8] = Piece.KY_SENTE;
-        board[7][7] = Piece.HI_SENTE;
-        board[7][1] = Piece.KA_SENTE;
+        board[8][0] = Piece.KYO_SENTE;
+        board[8][1] = Piece.KEI_SENTE;
+        board[8][2] = Piece.GIN_SENTE;
+        board[8][3] = Piece.KIN_SENTE;
+        board[8][4] = Piece.GYOKU_SENTE;
+        board[8][5] = Piece.KIN_SENTE;
+        board[8][6] = Piece.GIN_SENTE;
+        board[8][7] = Piece.KEI_SENTE;
+        board[8][8] = Piece.KYO_SENTE;
+        board[7][7] = Piece.HISYA_SENTE;
+        board[7][1] = Piece.KAKU_SENTE;
         for (int i = 0; i < 9; i++) {
             board[6][i] = Piece.FU_SENTE;
         }
@@ -63,10 +63,19 @@ public class ShogiEngine {
     }
 
     public boolean applyMove(MoveRequest move) {
-        if (!move.getPlayerId().equals(getCurrentPlayerId())) return false;
 
-        // 不正手チェック
-        if (!isValidMove(move)) return false;
+        System.out.println("➡️ applyMove called by " + move.getPlayerId());
+        System.out.println("👤 現在の手番: " + getCurrentPlayerId());
+
+        if (!move.getPlayerId().equals(getCurrentPlayerId())) {
+            System.out.println("❌ 手番ではないプレイヤーの手です");
+            return false;
+        }
+
+        if (!isValidMove(move)) {
+            System.out.println("❌ 不正な手です");
+            return false;
+        }
 
         int[] to = move.getTo();
         int captured = getPieceAt(to[0], to[1]);
@@ -80,6 +89,7 @@ public class ShogiEngine {
 
         // 手番交代
         turn = (turn == PlayerSide.SENTE) ? PlayerSide.GOTE : PlayerSide.SENTE;
+        System.out.println("✅ 手番交代: 次は " + turn);
 
         return true;
     }
@@ -88,7 +98,7 @@ public class ShogiEngine {
         // 打ち駒（二歩・打ち歩詰め）
         if (move.getFrom()[0] == -1 && move.getFrom()[1] == -1) {
             int toX = move.getTo()[0];
-            if (PieceUtil.toUnpromoted(move.getKind()) == Piece.FU_SENTE &&
+            if (PieceUtil.toUnpromoted(move.getPiece()) == Piece.FU_SENTE &&
                 PieceUtil.isNiFu(board, toX, turn)) {
                 return false;
             }
@@ -98,7 +108,7 @@ public class ShogiEngine {
         }
 
         // 成り強制
-        if (PieceUtil.isNariForced(move.getKind(), move.getTo()[1])) {
+        if (PieceUtil.isNariForced(move.getPiece(), move.getTo()[1])) {
             return false; // 成りが強制されてるのにしない手は不正
         }
 
@@ -110,21 +120,22 @@ public class ShogiEngine {
         return true;
     }
 
-    public List<int[]> getMovablePositions(MoveRequest request) {
-        int x = request.getFrom()[0];
-        int y = request.getFrom()[1];
-        int kind = request.getKind();
+    public List<int[]> getMovablePositions(MovableQuery query) {
+        int x = query.getX();
+        int y = query.getY();
+        int piece = query.getPiece();
 
         List<int[]> rawMoves = PieceUtil.getMovablePositions(board, x, y);
+
         List<MoveRequest> allCandidates = new ArrayList<>();
 
         for (int[] move : rawMoves) {
             MoveRequest m = new MoveRequest();
             m.setFrom(new int[]{x, y});
             m.setTo(move);
-            m.setKind(kind);
+            m.setPiece(piece);
             m.setPromotion(false);
-            m.setPlayerId(request.getPlayerId());
+            m.setPlayerId(query.getPlayerId());
             allCandidates.add(m);
         }
 
@@ -145,6 +156,10 @@ public class ShogiEngine {
 
     public String getCurrentPlayerId() {
         return (turn == PlayerSide.SENTE) ? senteId : goteId;
+    }
+
+    public String getNextPlayerId() {
+        return (turn == PlayerSide.SENTE) ? goteId : senteId;
     }
 
     public int[][] getBoard() {
