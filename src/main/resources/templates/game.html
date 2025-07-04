@@ -15,47 +15,44 @@
 
     <!-- 操作ボタン -->
     <div class="top-buttons">
-        <div th:text="#{game.order_second}" class="gote">後手</div>
-
-        <form th:action="@{/review}" method="get" style="margin: 0;">
+        <form th:action="@{/review}" method="get">
             <button id="surrender" th:text="#{game.surrender}" type="submit">投了</button>
         </form>
     </div>
 
-    
-    <!-- 持ち駒（後手） -->
-    <div id="gote-hand" th:attr="data-player-id=${goteId}" class="captured-pieces gote-hand">
-        後手持ち駒：-
-    </div>
+    <div id="game-layout">
+        <!-- 持ち駒（後手） -->
 
-    <!-- 手番表示 -->
-    <div id="turn-indicator" class="turn-indicator">
-        手番：読み込み中...
-    </div>
+        <div class="gote-time-limit">
+            <p class="debug">gote</p>
+        </div>
+        
+        <div id="gote-hand" th:attr="data-player-id=${goteId}" class="captured-pieces gote-hand">
+        </div>
+        <!-- 将棋盤 -->
+        <div id="shogi-board" class="board">
+            <table class="board-table">
+                <tbody>
+                    <tr th:each="y : ${#numbers.sequence(0,8)}">
+                        <td th:each="x : ${#numbers.sequence(0,8)}"
+                            th:attr="id=${'cell-' + x + '-' + y}"
+                            class="board-cell">
+                        </td>
+                    </tr>
+                </tbody>    
+            </table>
+        </div>
 
-    <!-- 将棋盤 -->
-    <div id="shogi-board" class="board">
-        <table class="board-table">
-            <tbody>
-                <tr th:each="y : ${#numbers.sequence(0,8)}">
-                    <td th:each="x : ${#numbers.sequence(0,8)}"
-                        th:attr="id=${'cell-' + x + '-' + y}"
-                        class="board-cell">
-                    </td>
-                </tr>
-            </tbody>    
-        </table>
-    </div>
+        <!-- 持ち駒（先手） -->
+        <div id="sente-hand" th:attr="data-player-id=${senteId}" class="captured-pieces sente-hand">
+            
+        </div>
 
-    <!-- 持ち駒（先手） -->
-    <div id="sente-hand" th:attr="data-player-id=${senteId}" class="captured-pieces sente-hand">
-        先手持ち駒：-
-    </div>
+        
+        <div class="sente-time-limit">
 
-    <!-- 下部情報 -->
-    <div class="bottom-info">
-        <div th:text="#{game.timelimit_left}" class="time-limit">持ち時間：</div>
-        <div th:text="#{game.order_first}" class="sente">先手</div>
+        </div>
+
     </div>
 </div>
 
