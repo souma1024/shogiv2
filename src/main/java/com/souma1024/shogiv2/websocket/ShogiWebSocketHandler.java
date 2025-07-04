@@ -1,5 +1,6 @@
 package com.souma1024.shogiv2.websocket;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.lang.NonNull;
@@ -14,6 +15,7 @@ import com.souma1024.shogiv2.common.enums.PlayerStatus;
 import com.souma1024.shogiv2.common.enums.RoomStatus;
 import com.souma1024.shogiv2.domain.GameState;
 import com.souma1024.shogiv2.domain.Player;
+import com.souma1024.shogiv2.domain.PlayerSide;
 import com.souma1024.shogiv2.domain.ShogiEngine;
 import com.souma1024.shogiv2.dto.StartGameRequest;
 import com.souma1024.shogiv2.model.Room;
@@ -50,6 +52,11 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
                 case START_GAME_REQUEST -> {
                     StartGameRequest req = mapper.treeToValue(payload, StartGameRequest.class);
                     handleStartGameRequest(req, session);
+                }
+
+                case MOVABLE_POSITION_REQUEST -> {
+                    MovablePositionRequest req = mapper.treeToValue(payload, MovablePositionRequest.class);
+                    handleMovablePositionRequest(req, session);
                 }
 
                 case MOVE_REQUEST -> {
@@ -104,6 +111,66 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             // 片方だけACTIVEの場合も保存
             roomRepository.save(room);
         }
+    }
+
+    private void handleMovablePositionRequest(MovablePositionRequest req, WebSocketSession session) throws Exception {
+        String roomId = req.getRoomId();
+        String playerId = req.getPlayerId();
+        int[] from = req.getFrom();
+
+        // 盤座標チェック
+        if (from == null || from.length != 2) {
+            System.out.printf("無効な from 座標が指定されました: {}", Arrays.toString(from));
+            return;
+        }
+
+        int fromX = from[0];
+        int fromY = from[1];
+
+        // ShogiEngine を取得
+        ShogiEngine engine = RoomManager.getInstance().getEngine(roomId);
+        if (engine == null) {
+            System.out.printf("ShogiEngine が見つかりません: roomId={}", roomId);
+            return;
+        }
+
+        // 駒の種類取得
+        int piece = engine.getBoard()[fromY][fromX];
+        if (piece == 0) {
+            System.out.printf("指定座標に駒がありません: ({}, {})", fromX, fromY);
+            return;
+        }
+
+        // プレイヤーの駒でなければ無視
+        boolean isSente = (playerId.equals(engine.getCurrentPlayerId()) && engine.getTurnPlayer() == PlayerSide.SENTE);
+        boolean isGote  = (playerId.equals(engine.getCurrentPlayerId()) && engine.getTurnPlayer() == PlayerSide.GOTE);
+        if ((isSente && piece < 0) || (isGote && piece > 0)) {
+            System.out.println("他人の駒を操作しようとしました");
+            return;
+        }
+
+        // MoveRequest を仮生成（kind を渡すため）
+        MoveRequest pseudo = new MoveRequest();
+        pseudo.setRoomId(roomId);
+        pseudo.setPlayerId(playerId);
+        pseudo.setFrom(from);
+        pseudo.setKind(Math.abs(piece)); // 駒の種類を正として渡す
+
+        // 合法手を取得
+        List<int[]> movable = engine.getMovablePositions(pseudo);
+
+        // レスポンスDTO作成
+        MovablePositionResponse response = new MovablePositionResponse();
+        response.setRoomId(roomId);
+        response.setPlayerId(playerId);
+        response.setFrom(from);
+        response.setKind(Math.abs(piece));
+        response.setMovable(movable);
+
+        // ラップして送信
+        WebSocketMessage wsMsg = new WebSocketMessage(WebSocketType.MOVABLE_POSITION_RESPONSE, response);
+        String json = mapper.writeValueAsString(wsMsg);
+        session.sendMessage(new TextMessage(json));
     }
 
     private void handleMoveRequest(MoveRequest req, WebSocketSession session) throws Exception {
