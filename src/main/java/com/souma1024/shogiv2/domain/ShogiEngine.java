@@ -23,32 +23,32 @@ public class ShogiEngine {
     }
 
     private void initializeBoard() {
-        board[0][0] = Piece.KY_GOTE;
-        board[0][1] = Piece.KE_GOTE;
-        board[0][2] = Piece.GI_GOTE;
-        board[0][3] = Piece.KI_GOTE;
-        board[0][4] = Piece.OU_GOTE;
-        board[0][5] = Piece.KI_GOTE;
-        board[0][6] = Piece.GI_GOTE;
-        board[0][7] = Piece.KE_GOTE;
-        board[0][8] = Piece.KY_GOTE;
-        board[1][1] = Piece.HI_GOTE;
-        board[1][7] = Piece.KA_GOTE;
+        board[0][0] = Piece.KYO_GOTE;
+        board[0][1] = Piece.KEI_GOTE;
+        board[0][2] = Piece.GIN_GOTE;
+        board[0][3] = Piece.KIN_GOTE;
+        board[0][4] = Piece.GYOKU_GOTE;
+        board[0][5] = Piece.KIN_GOTE;
+        board[0][6] = Piece.GIN_GOTE;
+        board[0][7] = Piece.KEI_GOTE;
+        board[0][8] = Piece.KYO_GOTE;
+        board[1][1] = Piece.HISYA_GOTE;
+        board[1][7] = Piece.KAKU_GOTE;
         for (int i = 0; i < 9; i++) {
             board[2][i] = Piece.FU_GOTE;
         }
 
-        board[8][0] = Piece.KY_SENTE;
-        board[8][1] = Piece.KE_SENTE;
-        board[8][2] = Piece.GI_SENTE;
-        board[8][3] = Piece.KI_SENTE;
-        board[8][4] = Piece.OU_SENTE;
-        board[8][5] = Piece.KI_SENTE;
-        board[8][6] = Piece.GI_SENTE;
-        board[8][7] = Piece.KE_SENTE;
-        board[8][8] = Piece.KY_SENTE;
-        board[7][7] = Piece.HI_SENTE;
-        board[7][1] = Piece.KA_SENTE;
+        board[8][0] = Piece.KYO_SENTE;
+        board[8][1] = Piece.KEI_SENTE;
+        board[8][2] = Piece.GIN_SENTE;
+        board[8][3] = Piece.KIN_SENTE;
+        board[8][4] = Piece.GYOKU_SENTE;
+        board[8][5] = Piece.KIN_SENTE;
+        board[8][6] = Piece.GIN_SENTE;
+        board[8][7] = Piece.KEI_SENTE;
+        board[8][8] = Piece.KYO_SENTE;
+        board[7][7] = Piece.HISYA_SENTE;
+        board[7][1] = Piece.KAKU_SENTE;
         for (int i = 0; i < 9; i++) {
             board[6][i] = Piece.FU_SENTE;
         }
@@ -110,12 +110,13 @@ public class ShogiEngine {
         return true;
     }
 
-    public List<int[]> getMovablePositions(MoveRequest request) {
-        int x = request.getFrom()[0];
-        int y = request.getFrom()[1];
-        int kind = request.getKind();
+    public List<int[]> getMovablePositions(MovableQuery query) {
+        int x = query.getX();
+        int y = query.getY();
+        int kind = query.getKind();
 
         List<int[]> rawMoves = PieceUtil.getMovablePositions(board, x, y);
+
         List<MoveRequest> allCandidates = new ArrayList<>();
 
         for (int[] move : rawMoves) {
@@ -124,7 +125,7 @@ public class ShogiEngine {
             m.setTo(move);
             m.setKind(kind);
             m.setPromotion(false);
-            m.setPlayerId(request.getPlayerId());
+            m.setPlayerId(query.getPlayerId());
             allCandidates.add(m);
         }
 

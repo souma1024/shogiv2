@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.souma1024.shogiv2.common.enums.PlayerStatus;
 import com.souma1024.shogiv2.common.enums.RoomStatus;
 import com.souma1024.shogiv2.domain.GameState;
+import com.souma1024.shogiv2.domain.MovableQuery;
 import com.souma1024.shogiv2.domain.Player;
 import com.souma1024.shogiv2.domain.PlayerSide;
 import com.souma1024.shogiv2.domain.ShogiEngine;
@@ -119,6 +120,8 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         String roomId = req.getRoomId();
         String playerId = req.getPlayerId();
         int[] from = req.getFrom();
+        int kind = req.getKind();
+        boolean promotion = req.isPromotion();
 
         // 盤座標チェック
         if (from == null || from.length != 2) {
@@ -136,37 +139,31 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        // 駒の種類取得
-        int piece = engine.getBoard()[fromY][fromX];
-        if (piece == 0) {
-            System.out.printf("指定座標に駒がありません: ({}, {})", fromX, fromY);
-            return;
-        }
-
         // プレイヤーの駒でなければ無視
         boolean isSente = (playerId.equals(engine.getCurrentPlayerId()) && engine.getTurnPlayer() == PlayerSide.SENTE);
         boolean isGote  = (playerId.equals(engine.getCurrentPlayerId()) && engine.getTurnPlayer() == PlayerSide.GOTE);
-        if ((isSente && piece < 0) || (isGote && piece > 0)) {
+        if ((isSente && kind < 0) || (isGote && kind > 0)) {
             System.out.println("他人の駒を操作しようとしました");
             return;
         }
 
         // MoveRequest を仮生成（kind を渡すため）
-        MoveRequest pseudo = new MoveRequest();
-        pseudo.setRoomId(roomId);
-        pseudo.setPlayerId(playerId);
-        pseudo.setFrom(from);
-        pseudo.setKind(Math.abs(piece)); // 駒の種類を正として渡す
-
+        MovableQuery query = new MovableQuery();
+        query.setX(fromX);
+        query.setY(fromY);
+        query.setKind(kind);
+        query.setPlayerId(playerId);
+        query.setPromotion(promotion);
+        query.setTurn(null);
         // 合法手を取得
-        List<int[]> movable = engine.getMovablePositions(pseudo);
+        List<int[]> movable = engine.getMovablePositions(query);
 
         // レスポンスDTO作成
         MovablePositionResponse response = new MovablePositionResponse();
         response.setRoomId(roomId);
         response.setPlayerId(playerId);
         response.setFrom(from);
-        response.setKind(Math.abs(piece));
+        response.setKind(kind);
         response.setMovable(movable);
 
         // ラップして送信
