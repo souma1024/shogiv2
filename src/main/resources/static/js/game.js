@@ -33,21 +33,15 @@ function setupWebSocket(roomId, playerId) {
 
         if (msg.type === "start_game_response") {
             const state = msg.payload;
-            drawBoard(state.board);
+            const isSente = state.senteId === playerId ? true : false;
+            drawBoard(state.board, isSente);
             setupPieceClickHandlers();
             currentTurnPlayerId = state.senteId;
-            if (myPlayerId !== currentTurnPlayerId) {
-                document.getElementById("shogi-board").classList.add("board-disabled");
-            } 
-        }
-
-        if (msg.type === "game_state") {
-            const state = msg.payload;
-            drawBoard(state.board);
         }
 
         if (msg.type === "movable_position_response") {
             const payload = msg.payload;
+            console.log("受信：move_postition_response");
             highlightMovableCells(payload.movable); // この関数を後述
         }
 
@@ -62,12 +56,6 @@ function handleMoveResponse(res) {
     if (!res.success) {
         resetSelectionAndHighlight();
         return;
-    }
-
-    if (myPlayerId !== currentTurnPlayerId) {
-        document.getElementById("shogi-board").classList.add("board-disabled");
-    } else {
-        document.getElementById("shogi-board").classList.remove("board-disabled");
     }
 
     applyMoveToBoard(res.from, res.to, res.piece, res.promotion);
@@ -108,7 +96,7 @@ function drawCell(from, to) {
     }
 }
 
-function drawBoard(board) {
+function drawBoard(board, isSente) {
     currentBoard = board;
     for (let y = 0; y < 9; y++) {
         for (let x = 0; x < 9; x++) {
@@ -122,6 +110,9 @@ function drawBoard(board) {
             const piece = board[y][x];
             cell.innerHTML = piece === 0 ? "" : getPieceImage(piece);
         }
+    }
+    if (!isSente) {
+        document.getElementById("shogi-board").classList.add("gote-board");
     }
 }
 
@@ -161,6 +152,12 @@ function setupPieceClickHandlers() {
         cell.addEventListener("click", () => {
             const [_, x, y] = cell.id.split("-").map(Number);
             const clickedPos = [x, y];
+
+            if (myPlayerId !== currentTurnPlayerId) {
+                console.log("⛔ あなたの手番ではありません");
+                return;
+            }
+
 
             if (selectedFrom === null) {
                 handleFirstClick(clickedPos);
@@ -225,7 +222,7 @@ function highlightMovableCells(movableList) {
     document.querySelectorAll(".board-cell").forEach(cell => {
         cell.classList.remove("movable-highlight");
     });
-
+    console.log("hehehehe");
     // 新しく合法手セルにハイライト追加
     movableList.forEach(([x, y]) => {
         const cell = document.getElementById(`cell-${x}-${y}`);

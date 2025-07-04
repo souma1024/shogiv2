@@ -169,6 +169,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         // ラップして送信
         WebSocketMessage wsMsg = new WebSocketMessage(WebSocketType.MOVABLE_POSITION_RESPONSE, response);
         String json = mapper.writeValueAsString(wsMsg);
+        System.out.println("✅ movable_position_response を送信: " + json);
         session.sendMessage(new TextMessage(json));
     }
 
