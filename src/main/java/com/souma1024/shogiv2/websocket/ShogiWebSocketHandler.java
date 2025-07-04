@@ -18,6 +18,7 @@ import com.souma1024.shogiv2.domain.Player;
 import com.souma1024.shogiv2.domain.PlayerSide;
 import com.souma1024.shogiv2.domain.ShogiEngine;
 import com.souma1024.shogiv2.dto.StartGameRequest;
+import com.souma1024.shogiv2.dto.StartGameResponse;
 import com.souma1024.shogiv2.model.Room;
 import com.souma1024.shogiv2.repository.RoomRepository;
 import com.souma1024.shogiv2.websocket.dto.*;
@@ -96,17 +97,18 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         if (room.getFirstPlayerStatus() == PlayerStatus.ACTIVE &&
             room.getSecondPlayerStatus() == PlayerStatus.ACTIVE) {
 
-            room.setStatus(RoomStatus.ACTIVE);
-            roomRepository.save(room);
-
-            // 対局開始データを送信（仮：ShogiEngineの状態など）
-
             ShogiEngine engine = roomManager.getOrCreateEngine(roomId, room.getFirstPlayerId(), room.getSecondPlayerId());
-
-
             GameState state = engine.toGameState();
+
+            StartGameResponse response = new StartGameResponse();
+            response.setRoomId(roomId);
+            response.setBoard(state.getBoard());
+            response.setCapturedPieces(state.getCapturedPieces());
+            response.setSenteId(room.getFirstPlayerId());
+            response.setGoteId(room.getSecondPlayerId());
+
+            roomManager.broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.START_GAME_RESPONSE, response));
             
-            roomManager.broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.GAME_STATE, state));
         } else {
             // 片方だけACTIVEの場合も保存
             roomRepository.save(room);
