@@ -4,7 +4,7 @@ socket = null;
 function setupWebSocket(roomId, playerId) {
     myPlayerId = playerId;
 
-    const socket = new WebSocket(`ws://${location.host}/ws/shogi?roomId=${roomId}&playerId=${playerId}`);
+    socket = new WebSocket(`ws://${location.host}/ws/shogi?roomId=${roomId}&playerId=${playerId}`);
 
     socket.onopen = () => {
         console.log("✅Websocket 接続完了");
@@ -47,6 +47,7 @@ function drawBoard(board) {
             cell.innerHTML = piece === 0 ? "" : getPieceImage(piece);
         }
     }
+    setupPieceClickHandlers();
 }
 
 function updateCapturedPieces(captured) {
@@ -115,4 +116,31 @@ function getPieceImage(piece) {
         return `<img src="/images/piece/gote_${name}.png" class="piece-image gote-image" />`;
     }
 
+}
+
+function setupPieceClickHandlers() {
+    for (let y = 0; y < 9; y++) {
+        for (let x = 0; x < 9; x++) {
+            const cellId = `cell-${x}-${y}`;
+            const cell = document.getElementById(cellId);
+
+            if (cell) {
+                cell.addEventListener("click", () => {
+                    const moveMessage = {
+                        type: "move_request",
+                        payload: {
+                            roomId: location.pathname.split("/").pop(),
+                            playerId: myPlayerId,
+                            from: [x, y],
+                            to: [x, y - 1],
+                            kind: 1,
+                            promotion: false
+                        }
+                    };
+                    socket.send(JSON.stringify(moveMessage));
+                    console.log("📤 move 送信:", moveMessage);
+                });
+            }
+        }
+    }
 }
