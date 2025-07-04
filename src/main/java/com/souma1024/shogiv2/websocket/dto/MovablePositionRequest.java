@@ -7,6 +7,6 @@ public class MovablePositionRequest {
     private String roomId;
     private String playerId;
     private int[] from;
-    private int kind;
+    private int piece;
     private boolean promotion;
 }

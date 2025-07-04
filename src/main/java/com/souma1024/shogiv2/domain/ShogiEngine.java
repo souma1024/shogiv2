@@ -88,7 +88,7 @@ public class ShogiEngine {
         // 打ち駒（二歩・打ち歩詰め）
         if (move.getFrom()[0] == -1 && move.getFrom()[1] == -1) {
             int toX = move.getTo()[0];
-            if (PieceUtil.toUnpromoted(move.getKind()) == Piece.FU_SENTE &&
+            if (PieceUtil.toUnpromoted(move.getPiece()) == Piece.FU_SENTE &&
                 PieceUtil.isNiFu(board, toX, turn)) {
                 return false;
             }
@@ -98,7 +98,7 @@ public class ShogiEngine {
         }
 
         // 成り強制
-        if (PieceUtil.isNariForced(move.getKind(), move.getTo()[1])) {
+        if (PieceUtil.isNariForced(move.getPiece(), move.getTo()[1])) {
             return false; // 成りが強制されてるのにしない手は不正
         }
 
@@ -113,7 +113,7 @@ public class ShogiEngine {
     public List<int[]> getMovablePositions(MovableQuery query) {
         int x = query.getX();
         int y = query.getY();
-        int kind = query.getKind();
+        int piece = query.getPiece();
 
         List<int[]> rawMoves = PieceUtil.getMovablePositions(board, x, y);
 
@@ -123,7 +123,7 @@ public class ShogiEngine {
             MoveRequest m = new MoveRequest();
             m.setFrom(new int[]{x, y});
             m.setTo(move);
-            m.setKind(kind);
+            m.setPiece(piece);
             m.setPromotion(false);
             m.setPlayerId(query.getPlayerId());
             allCandidates.add(m);

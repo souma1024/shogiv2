@@ -104,7 +104,7 @@ public class PieceUtil {
     public static void applyMoveOnBoard(int[][] board, MoveRequest move) {
         int[] from = move.getFrom();
         int[] to = move.getTo();
-        int kind = move.getKind();
+        int kind = move.getPiece();
         boolean promote = move.isPromotion();
 
         int toX = to[0], toY = to[1];

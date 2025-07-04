@@ -6,7 +6,7 @@ import lombok.Data;
 public class MovableQuery {
     private int x;
     private int y;
-    private int kind;
+    private int piece;
     private boolean promotion;
     private String playerId;
     private PlayerSide turn;

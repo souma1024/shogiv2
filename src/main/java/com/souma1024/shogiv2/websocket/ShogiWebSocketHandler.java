@@ -120,7 +120,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         String roomId = req.getRoomId();
         String playerId = req.getPlayerId();
         int[] from = req.getFrom();
-        int kind = req.getKind();
+        int piece = req.getPiece();
         boolean promotion = req.isPromotion();
 
         // 盤座標チェック
@@ -142,16 +142,16 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         // プレイヤーの駒でなければ無視
         boolean isSente = (playerId.equals(engine.getCurrentPlayerId()) && engine.getTurnPlayer() == PlayerSide.SENTE);
         boolean isGote  = (playerId.equals(engine.getCurrentPlayerId()) && engine.getTurnPlayer() == PlayerSide.GOTE);
-        if ((isSente && kind < 0) || (isGote && kind > 0)) {
+        if ((isSente && piece < 0) || (isGote && piece > 0)) {
             System.out.println("他人の駒を操作しようとしました");
             return;
         }
 
-        // MoveRequest を仮生成（kind を渡すため）
+        // MoveRequest を仮生成（piece を渡すため）
         MovableQuery query = new MovableQuery();
         query.setX(fromX);
         query.setY(fromY);
-        query.setKind(kind);
+        query.setPiece(piece);
         query.setPlayerId(playerId);
         query.setPromotion(promotion);
         query.setTurn(null);
@@ -163,7 +163,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         response.setRoomId(roomId);
         response.setPlayerId(playerId);
         response.setFrom(from);
-        response.setKind(kind);
+        response.setPiece(piece);
         response.setMovable(movable);
 
         // ラップして送信
@@ -196,7 +196,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         res.setPlayerId(playerId);
         res.setFrom(req.getFrom());
         res.setTo(req.getTo());
-        res.setKind(req.getKind());
+        res.setPiece(req.getPiece());
         res.setPromotion(req.isPromotion());
         res.setSuccess(success);
         res.setNextPlayerId(engine.getCurrentPlayerId());

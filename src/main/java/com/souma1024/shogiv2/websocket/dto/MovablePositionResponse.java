@@ -9,6 +9,6 @@ public class MovablePositionResponse {
     private String roomId;
     private String playerId;
     private int[] from;
-    private int kind;
+    private int piece;
     private List<int[]> movable;
 }
