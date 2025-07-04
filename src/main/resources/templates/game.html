@@ -23,16 +23,18 @@
     <div id="game-layout">
         <!-- 持ち駒（後手） -->
 
-        <div class="gote-time-limit">
-            <p class="debug">gote</p>
-        </div>
-        
-        <div class="captured-pieces gote-hand">
-            <div th:each="i : ${#numbers.sequence(1,7)}"
-                th:attr="id=${'capturedCell-' + goteId + '-' + i}"
-                class="captured-cell">
+        <div class="gote-field">
+            <div class="gote-time-limit">
+            </div>
+            
+            <div class="captured-pieces gote-hand">
+                <div th:each="i : ${#numbers.sequence(1,7)}"
+                    th:attr="id=${'capturedCell-' + goteId + '-' + i}"
+                    class="captured-cell">
+                </div>
             </div>
         </div>
+        
 
         <!-- 将棋盤 -->
         <div id="shogi-board" class="board">
@@ -49,17 +51,19 @@
         </div>
 
         <!-- 持ち駒（先手） -->
-        <div class="captured-pieces sente-hand">
-            <div th:each="i : ${#numbers.sequence(1,7)}"
-                th:attr="id=${'capturedCell-' + senteId + '-' + i}"
-                class="captured-cell">
+        <div class="sente-field">
+            <div class="captured-pieces sente-hand">
+                <div th:each="i : ${#numbers.sequence(1,7)}"
+                    th:attr="id=${'capturedCell-' + senteId + '-' + i}"
+                    class="captured-cell">
+                </div>
+            </div>
+
+            <div class="sente-time-limit">
+
             </div>
         </div>
-
         
-        <div class="sente-time-limit">
-
-        </div>
 
     </div>
 </div>
