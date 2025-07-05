@@ -1,15 +1,12 @@
-let myPlayerId = ""; // ページ読み込み時にURLなどからセットする
 socket = null;
 let selectedFrom = null;
 let currentBoard = [];
 const urlParams = new URLSearchParams(window.location.search);
 const roomId = location.pathname.split("/").pop();
 const playerId = urlParams.get("playerId");
-let currentTurnPlayerId = null;
-
+let currentPlayerId = null;
 
 function setupWebSocket(roomId, playerId) {
-    myPlayerId = playerId;
 
     socket = new WebSocket(`ws://${location.host}/ws/shogi?roomId=${roomId}&playerId=${playerId}`);
 
@@ -32,11 +29,11 @@ function setupWebSocket(roomId, playerId) {
         console.log("📥 メッセージ受信:", msg);
 
         if (msg.type === "start_game_response") {
-            const state = msg.payload;
-            const isSente = state.senteId === playerId ? true : false;
-            drawBoard(state.board, isSente);
+            const payload = msg.payload;
+            const isSente = payload.senteId === playerId;
+            currentPlayerId = payload.senteId;
+            drawBoard(payload.board, isSente);
             setupPieceClickHandlers();
-            currentTurnPlayerId = state.senteId;
         }
 
         if (msg.type === "movable_position_response") {
@@ -49,6 +46,7 @@ function setupWebSocket(roomId, playerId) {
             const payload = msg.payload
             handleMoveResponse(payload);
             applyCapturedPieces(payload.captured);
+            currentPlayerId = payload.nextPlayerId;
         }
     };
 }
@@ -59,10 +57,8 @@ function handleMoveResponse(res) {
         resetSelectionAndHighlight();
         return;
     }
-
     applyMoveToBoard(res.from, res.to, res.piece, res.promotion);
     drawCell(res.from, res.to, res.piece);
-    currentTurnPlayerId = res.nextPlayerId;
     resetSelectionAndHighlight();
 }
 
@@ -76,13 +72,9 @@ function applyMoveToBoard(from, to, piece, promotion) {
     }
 
     const [fromX, fromY] = from;
-
     currentBoard[fromY][fromX] = 0;
 
-    if (promotion) {
-        piece = piece + 100 * Math.sign(piece); // 成りを反映
-    }
-
+    if (promotion) piece = promote(piece); // 成りを反映
     currentBoard[toY][toX] = piece;
 }
 
@@ -103,7 +95,7 @@ function drawCell(from, to, piece) {
     if (from === null) {
         // 打ち駒のときは、元が持ち駒フィールド
         const kind = Math.abs(piece);
-        const capturedCellId = `capturedCell-${myPlayerId}-${kind}`;
+        const capturedCellId = `capturedCell-${playerId}-${kind}`;
         const cell = document.getElementById(capturedCellId);
         if (cell) {
             cell.innerHTML = ""; // 手動で消す
@@ -124,11 +116,7 @@ function drawBoard(board, isSente) {
         for (let x = 0; x < 9; x++) {
             const cellId = `cell-${x}-${y}`;
             const cell = document.getElementById(cellId);
-            if (!cell) {
-                console.warn("⚠️ cell not found:", cellId);
-                continue;
-            }
-
+            
             const piece = board[y][x];
             cell.innerHTML = piece === 0 ? "" : getPieceImage(piece);
         }
@@ -155,7 +143,7 @@ function applyCapturedPieces(captured) {
     }
     cell.innerHTML = captured.piece === 0 ? "" : getPieceImage(-1 * captured.piece);
     document.getElementById(capturedCellId).addEventListener("click", () => {   
-        if (myPlayerId !== currentTurnPlayerId) {
+        if (playerId !== currentPlayerId) {
             console.log("⛔ あなたの手番ではありません");
             return;
         }
@@ -170,7 +158,7 @@ function applyCapturedPieces(captured) {
             type: "movable_position_request",
             payload: {
                 roomId,
-                playerId: myPlayerId,
+                playerId: playerId,
                 from: null,
                 piece: capturedPiece,
                 promotion: false
@@ -186,9 +174,9 @@ function getPieceImage(piece) {
     if (piece === 0) return "";
 
     const abs = Math.abs(piece);
-    const isPromoted = abs >= 100 && abs < 200;
+    const promotion = isPromoted(abs);
 
-    let base = isPromoted ? abs - 100 : abs;
+    let base = promotion ? abs - 100 : abs;
     let name = {
         1: "fu", 2: "kyo", 3: "kei", 4: "gin", 5: "kin",
         6: "kaku", 7: "hisya", 8: "uma", 9: "ryu", 77: "gyoku"
@@ -196,43 +184,41 @@ function getPieceImage(piece) {
 
     if (!name) return "";
 
-    if (isPromoted && base !== 5) {
-        name = "promoted_" + name;
-    }
+    if (promotion && base !== 5) name = "promoted_" + name;
+    const prefix = piece > 0 ? "sente" : "gote";
 
-    if (piece > 0) {
-        return `<img src="/images/piece/sente_${name}.png" class="piece-image sente-image" />`;
-    } else {
-        return `<img src="/images/piece/gote_${name}.png" class="piece-image gote-image" />`;
-    }
-
+    return `<img src="/images/piece/${prefix}_${name}.png" class="piece-image ${prefix}-image" />`;
 }
 
 function setupPieceClickHandlers() {
     document.querySelectorAll(".board-cell").forEach(cell => {
         cell.addEventListener("click", () => {
-            const [_, x, y] = cell.id.split("-").map(Number);
-            const clickedPos = [x, y];
 
-            if (myPlayerId !== currentTurnPlayerId) {
+            if (playerId !== currentPlayerId) {
                 console.log("⛔ あなたの手番ではありません");
                 return;
             }
 
+            const [_, x, y] = cell.id.split("-").map(Number);
+            const clickedPos = [x, y];
 
-            if (selectedFrom === null) {
-                handleFirstClick(clickedPos);
-            } else {
-                handleSecondClick(clickedPos);
-            }
+            handleClick(clickedPos);
         });
     })
+}
+
+function handleClick(clickedPos) {
+    if (selectedFrom === null) {
+        handleFirstClick(clickedPos);
+    } else {
+        handleSecondClick(clickedPos);
+    }
 }
     
 function handleFirstClick(clickedPos) {
     const [x, y] = clickedPos;
     const piece = currentBoard[y][x];
-    const promotion = piece >= 100;
+    const promotion = isPromoted(piece);
 
     selectedFrom = {
         from: clickedPos,
@@ -243,7 +229,7 @@ function handleFirstClick(clickedPos) {
         type: "movable_position_request",
         payload: {
             roomId,
-            playerId: myPlayerId,
+            playerId: playerId,
             from: clickedPos,
             piece,
             promotion
@@ -263,7 +249,7 @@ function handleSecondClick(clickedPos) {
             type: "move_request",
             payload: {
                 roomId,
-                playerId: myPlayerId,
+                playerId: playerId,
                 from: null,
                 to,
                 piece: selectedFrom.piece,
@@ -276,13 +262,13 @@ function handleSecondClick(clickedPos) {
     } else {
         const from = selectedFrom;
         const piece = currentBoard[selectedFrom.from[1]][selectedFrom.from[0]];
-        const promotion = piece >= 100;
+        const promotion = isPromoted(piece);
 
         const moveMsg = {
             type: "move_request",
             payload: {
                 roomId,
-                playerId: myPlayerId,
+                playerId: playerId,
                 from: from.from,
                 to,
                 piece,
@@ -328,11 +314,17 @@ function drawCapturedPieces(capturedMap) {
         for (const kind in kindCountMap) {
             const cellId = `capturedCell-${playerId}-${kind}`;
             const cell = document.getElementById(cellId);
-            if (!cell) continue;
 
             const count = kindCountMap[kind];
-            const imgHtml = getPieceImage(playerId === myPlayerId ? -kind : kind);
             cell.innerHTML = imgHtml + (count > 1 ? `<span class="piece-count">x${count}</span>` : "");
         }
     }
+}
+
+function promote(piece) {
+    return piece + 100 * Math.sign(piece);
+}
+
+function isPromoted(piece) {
+    return Math.abs(piece) > 100; 
 }
