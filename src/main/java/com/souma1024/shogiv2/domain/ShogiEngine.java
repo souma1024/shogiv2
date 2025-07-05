@@ -11,7 +11,7 @@ import com.souma1024.shogiv2.websocket.dto.MoveRequest;
 
 public class ShogiEngine {
     private final int[][] board = new int[9][9];
-    private final Map<String, List<Integer>> capturedPieces = new HashMap<>();
+    private final Map<String, int[]> capturedPieces = new HashMap<>();
     private PlayerSide turn = PlayerSide.SENTE;
     private final String senteId;
     private final String goteId;
@@ -20,8 +20,9 @@ public class ShogiEngine {
         this.senteId = senteId;
         this.goteId = goteId;
         initializeBoard();
-        capturedPieces.put(senteId, new ArrayList<>());
-        capturedPieces.put(goteId, new ArrayList<>());
+        capturedPieces.put(senteId, new int[7]); // 各要素は 0 で初期化される
+        capturedPieces.put(goteId, new int[7]); // 各要素は 0 で初期化される
+
     }
 
     private void initializeBoard() {
@@ -81,12 +82,13 @@ public class ShogiEngine {
 
         CapturedPiece capturedPiece = null; 
         int[] to = move.getTo();
+        
 
         if (move.getFrom() == null) {
             int piece = move.getPiece();
             PlayerSide side = getTurnPlayer();
-
             int actualPiece = (side == PlayerSide.SENTE) ? piece : -piece;
+            
 
             // 盤上に置く
             if (board[to[1]][to[0]] != 0) {
@@ -97,21 +99,22 @@ public class ShogiEngine {
             board[to[1]][to[0]] = actualPiece;
 
             // 持ち駒から1個消費
-            List<Integer> hand = capturedPieces.get(move.getPlayerId());
-            if (!hand.remove((Integer) actualPiece)) {
+            int[] hand = capturedPieces.get(move.getPlayerId());
+            if (hand[actualPiece] == 0) {
                 System.out.println("❌ 持ち駒に指定された駒がありません");
                 return new ApplyMoveResult(false, null);
             }
         } else {
             int captured = getPieceAt(to[0], to[1]);
+            int actualPiece = Math.abs(captured);
             if (captured != 0) {
                 int toHand = PieceUtil.toUnpromoted(captured) * -1;
-                capturedPieces.get(getCurrentPlayerId()).add(toHand);
+                capturedPieces.get(getCurrentPlayerId())[actualPiece]++;
 
                 capturedPiece = new CapturedPiece();
                 capturedPiece.setOwner(move.getPlayerId());
                 capturedPiece.setPiece(captured);
-                capturedPiece.setCount(1);
+                capturedPiece.setCount(capturedPieces.get(move.getPlayerId())[actualPiece]);
             }
 
             // 盤面に反映（成り処理含む）
@@ -134,7 +137,7 @@ public class ShogiEngine {
 
         if (from == null) {
             // 盤面・持ち駒情報を使って合法打ち位置を列挙
-            List<Integer> hand = capturedPieces.get(move.getPlayerId());
+            int[] hand = capturedPieces.get(move.getPlayerId());
             List<int[]> legalDrops = PieceUtil.getDropPositions(board, piece, side, hand);
 
             boolean isLegal = legalDrops.stream()
@@ -192,7 +195,7 @@ public class ShogiEngine {
         String playerId = query.getPlayerId();
         PlayerSide side = (playerId.equals(senteId)) ? PlayerSide.SENTE : PlayerSide.GOTE;
 
-        List<Integer> handPieces = capturedPieces.get(playerId); // プレイヤーの持ち駒一覧
+        int[] handPieces = capturedPieces.get(playerId); // プレイヤーの持ち駒一覧
 
         return PieceUtil.getDropPositions(board, piece, side, handPieces);
     }
@@ -218,10 +221,12 @@ public class ShogiEngine {
         return PieceUtil.copyBoard(board);
     }
 
-    public Map<String, List<Integer>> getCapturedPieces() {
-        Map<String, List<Integer>> copy = new HashMap<>();
-        for (Map.Entry<String, List<Integer>> entry : capturedPieces.entrySet()) {
-            copy.put(entry.getKey(), new ArrayList<>(entry.getValue()));
+    public Map<String, int[]> getCapturedPieces() {
+        Map<String, int[]> copy = new HashMap<>();
+        for (Map.Entry<String, int[]> entry : capturedPieces.entrySet()) {
+            int[] original = entry.getValue();
+            int[] cloned = Arrays.copyOf(original, original.length); // 配列を複製
+            copy.put(entry.getKey(), cloned);
         }
         return copy;
     }

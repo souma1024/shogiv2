@@ -74,12 +74,25 @@ export function initBoardClickHandlers() {
 
 export function applyCapturedPieces(captured) {
     if (!captured) return;
-    const kind = Math.abs(captured.piece);
-    const capturedPiece = captured.piece * -1;
-    const capturedCellId = `capturedCell-${captured.owner}-${kind}`;
+    const { owner, piece, count } = captured;
+    const kind = Math.abs(piece);
+    const capturedPiece = piece * -1;
+    const capturedCellId = `capturedCell-${owner}-${kind}`;
     const cell = document.getElementById(capturedCellId);
     if (!cell) return;
-    cell.innerHTML = getPieceImage(capturedPiece);
+
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = getPieceImage(capturedPiece);
+
+     if (count > 1) {
+        const countSpan = document.createElement("div");
+        countSpan.className = "piece-count";
+        countSpan.textContent = `×${count}`;
+        wrapper.appendChild(countSpan);
+    }
+
+    cell.appendChild(wrapper);
+
     cell.onclick = () => {
         if (state.playerId !== state.currentPlayerId) return;
         state.selectedFrom = {

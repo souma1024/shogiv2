@@ -150,7 +150,7 @@ public class PieceUtil {
         return false;
     }
 
-    public static boolean isCheckmate(int[][] board, PlayerSide side, List<Integer> handPieces) {
+    public static boolean isCheckmate(int[][] board, PlayerSide side, int[] handPieces) {
         // TODO: 実装済みのものを移植して統合
         return false;
     }
@@ -197,7 +197,7 @@ public class PieceUtil {
         return moves;
     }
 
-    public static List<int[]> getDropPositions(int[][] board, int piece, PlayerSide side, List<Integer> handPieces) {
+    public static List<int[]> getDropPositions(int[][] board, int piece, PlayerSide side,  int[] handPieces) {
         List<int[]> positions = new ArrayList<>();
 
         int basePiece = toUnpromoted(piece);

@@ -12,6 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GameState {
     private int[][] board;
-    private Map<String, List<Integer>> capturedPieces;
+    private Map<String, int[]> capturedPieces;
     private String currentPlayerId;
 }
