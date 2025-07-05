@@ -108,7 +108,6 @@ public class ShogiEngine {
             int captured = getPieceAt(to[0], to[1]);
             int actualPiece = Math.abs(captured);
             if (captured != 0) {
-                int toHand = PieceUtil.toUnpromoted(captured) * -1;
                 capturedPieces.get(getCurrentPlayerId())[actualPiece]++;
 
                 capturedPiece = new CapturedPiece();

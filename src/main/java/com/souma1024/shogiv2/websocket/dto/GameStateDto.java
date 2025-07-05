@@ -1,6 +1,5 @@
 package com.souma1024.shogiv2.websocket.dto;
 
-import java.util.List;
 import java.util.Map;
 
 public class GameStateDto {
