@@ -65,7 +65,6 @@ public class ShogiEngine {
     }
 
     public ApplyMoveResult applyMove(MoveRequest move) {
-
         if (!move.getPlayerId().equals(getCurrentPlayerId())) {
             System.out.println("❌ 手番ではないプレイヤーの手です");
             return new ApplyMoveResult(false, null);
@@ -81,21 +80,43 @@ public class ShogiEngine {
         }
 
         CapturedPiece capturedPiece = null; 
-
         int[] to = move.getTo();
-        int captured = getPieceAt(to[0], to[1]);
-        if (captured != 0) {
-            int toHand = PieceUtil.toUnpromoted(captured) * -1;
-            capturedPieces.get(getCurrentPlayerId()).add(toHand);
 
-            capturedPiece = new CapturedPiece();
-            capturedPiece.setOwner(move.getPlayerId());
-            capturedPiece.setPiece(captured);
-            capturedPiece.setCount(1);
+        if (move.getFrom() == null) {
+            int piece = move.getPiece();
+            PlayerSide side = getTurnPlayer();
+
+            int actualPiece = (side == PlayerSide.SENTE) ? piece : -piece;
+
+            // 盤上に置く
+            if (board[to[1]][to[0]] != 0) {
+                System.out.println("❌ 打ち先にすでに駒が存在します");
+                return new ApplyMoveResult(false, null);
+            }
+
+            board[to[1]][to[0]] = actualPiece;
+
+            // 持ち駒から1個消費
+            List<Integer> hand = capturedPieces.get(move.getPlayerId());
+            if (!hand.remove((Integer) actualPiece)) {
+                System.out.println("❌ 持ち駒に指定された駒がありません");
+                return new ApplyMoveResult(false, null);
+            }
+        } else {
+            int captured = getPieceAt(to[0], to[1]);
+            if (captured != 0) {
+                int toHand = PieceUtil.toUnpromoted(captured) * -1;
+                capturedPieces.get(getCurrentPlayerId()).add(toHand);
+
+                capturedPiece = new CapturedPiece();
+                capturedPiece.setOwner(move.getPlayerId());
+                capturedPiece.setPiece(captured);
+                capturedPiece.setCount(1);
+            }
+
+            // 盤面に反映（成り処理含む）
+            PieceUtil.applyMoveOnBoard(board, move);
         }
-
-        // 駒を動かす（成り処理は PieceUtil 内で判断）
-        PieceUtil.applyMoveOnBoard(board, move);
 
         // 手番交代
         turn = (turn == PlayerSide.SENTE) ? PlayerSide.GOTE : PlayerSide.SENTE;
@@ -105,34 +126,45 @@ public class ShogiEngine {
     }
 
     private boolean isValidMove(MoveRequest move) {
+
+        int[] from = move.getFrom();
+        int[] to = move.getTo();
+        int piece = move.getPiece();
+        PlayerSide side = getTurnPlayer();
+
+        if (from == null) {
+            // 盤面・持ち駒情報を使って合法打ち位置を列挙
+            List<Integer> hand = capturedPieces.get(move.getPlayerId());
+            List<int[]> legalDrops = PieceUtil.getDropPositions(board, piece, side, hand);
+
+            boolean isLegal = legalDrops.stream()
+                .anyMatch(pos -> pos[0] == to[0] && pos[1] == to[1]);
+
+            if (!isLegal) {
+                System.out.println("❌ この位置には打てません");
+            }
+
+            return isLegal;
+        } 
+
         // 打ち駒（二歩・打ち歩詰め）
-        if (move.getFrom()[0] == -1 && move.getFrom()[1] == -1) {
-            int toX = move.getTo()[0];
-            if (PieceUtil.toUnpromoted(move.getPiece()) == Piece.FU_SENTE &&
-                PieceUtil.isNiFu(board, toX, turn)) {
-                return false;
-            }
-            if (PieceUtil.isUchiFuZume(board, toX, move.getTo()[1], turn)) {
-                return false;
-            }
+        if (PieceUtil.isNariForced(piece, to[1]) && !move.isPromotion()) {
+            System.out.println("❌ 成りが強制される場面で不成です");
+            return false;
         }
 
-        // 成り強制
-        if (PieceUtil.isNariForced(move.getPiece(), move.getTo()[1])) {
-            return false; // 成りが強制されてるのにしない手は不正
-        }
-
-        // 自玉が取られる手
-        if (PieceUtil.isSelfCheckAfterMove(board, move, turn)) {
+        if (PieceUtil.isSelfCheckAfterMove(board, move, side)) {
+            System.out.println("❌ 自玉が取られる手です");
             return false;
         }
 
         return true;
+
     }
 
     public List<int[]> getMovablePositions(MovableQuery query) {
-        int x = query.getX();
-        int y = query.getY();
+        int x = query.getFrom()[0];
+        int y = query.getFrom()[1];
         int piece = query.getPiece();
 
         List<int[]> rawMoves = PieceUtil.getMovablePositions(board, x, y);
@@ -153,6 +185,16 @@ public class ShogiEngine {
                         .stream()
                         .map(MoveRequest::getTo)
                         .toList();
+    }
+
+    public List<int[]> getDropPositions(MovableQuery query) {
+        int piece = query.getPiece();
+        String playerId = query.getPlayerId();
+        PlayerSide side = (playerId.equals(senteId)) ? PlayerSide.SENTE : PlayerSide.GOTE;
+
+        List<Integer> handPieces = capturedPieces.get(playerId); // プレイヤーの持ち駒一覧
+
+        return PieceUtil.getDropPositions(board, piece, side, handPieces);
     }
 
     public boolean isCheckmate(PlayerSide playerSide) {
