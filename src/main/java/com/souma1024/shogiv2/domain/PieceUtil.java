@@ -68,9 +68,10 @@ public class PieceUtil {
     }
 
     public static boolean isNiFu(int[][] board, int x, PlayerSide side) {
+        int target = side == PlayerSide.SENTE ? 1 : -1;
         for (int y = 0; y < 9; y++) {
             int p = board[y][x];
-            if (toUnpromoted(p) == Piece.FU_SENTE && isSente(p) == (side == PlayerSide.SENTE)) {
+            if (p == target) {
                 return true;
             }
         }
@@ -150,7 +151,7 @@ public class PieceUtil {
         return false;
     }
 
-    public static boolean isCheckmate(int[][] board, PlayerSide side, List<Integer> handPieces) {
+    public static boolean isCheckmate(int[][] board, PlayerSide side, int[] handPieces) {
         // TODO: 実装済みのものを移植して統合
         return false;
     }
@@ -197,45 +198,45 @@ public class PieceUtil {
         return moves;
     }
 
-    public static List<int[]> getDropPositions(int[][] board, int piece, PlayerSide side, List<Integer> handPieces) {
+    public static List<int[]> getDropPositions(int[][] board, int piece, PlayerSide side,  int[] handPieces) {
         List<int[]> positions = new ArrayList<>();
-
-        int basePiece = toUnpromoted(piece);
 
         for (int y = 0; y < 9; y++) {
             for (int x = 0; x < 9; x++) {
                 if (board[y][x] != 0) continue; // 空いてないマスは打てない
 
-                // 二歩チェック（歩のときだけ）
-                if (basePiece == Piece.FU_SENTE && isNiFu(board, x, side)) {
-                    continue;
-                }
-
-                // 打ち歩詰めチェック
-                if (basePiece == Piece.FU_SENTE && isUchiFuZume(board, x, y, side)) {
-                    continue;
-                }
-
-                // 桂馬の打ち制限（最下段に打てない）
-                if (basePiece == Piece.KEI_SENTE) {
-                    if ((side == PlayerSide.SENTE && y <= 1) || (side == PlayerSide.GOTE && y >= 7)) {
-                        continue;
-                    }
-                }
-
-                // 香車・歩も打てない行がある
-                if ((basePiece == Piece.FU_SENTE || basePiece == Piece.KYO_SENTE)) {
-                    if ((side == PlayerSide.SENTE && y == 0) || (side == PlayerSide.GOTE && y == 8)) {
-                        continue;
-                    }
-                }
+                if (!isEmpty(board, x, y)) continue;
+                if (!canDropAt(board, piece, x, y, side)) continue;
 
                 positions.add(new int[] { x, y });
+
             }
         }
 
         return positions;
     }
 
-}
+    private static boolean canDropAt(int[][] board, int piece, int x, int y, PlayerSide side) {
+        // 二歩
+        if (isNiFu(board, x, side)) return false;
 
+        // 打ち歩詰め
+        if (isUchiFuZume(board, x, y, side)) return false;
+
+        // 桂馬の打ち制限
+        if (piece == Piece.KEI_SENTE || piece == Piece.KEI_GOTE) {
+            if ((side == PlayerSide.SENTE && y <= 1) || (side == PlayerSide.GOTE && y >= 7)) return false;
+        }
+
+        // 歩・香の最下段制限
+        if (piece == Piece.FU_SENTE || piece == Piece.FU_GOTE || piece == Piece.KYO_SENTE || piece == Piece.KYO_GOTE) {
+            if ((side == PlayerSide.SENTE && y == 0) || (side == PlayerSide.GOTE && y == 8)) return false;
+        }
+
+        return true;
+    }
+
+    private static boolean isEmpty(int[][] board, int x, int y) {
+        return board[y][x] == 0;
+    }
+}

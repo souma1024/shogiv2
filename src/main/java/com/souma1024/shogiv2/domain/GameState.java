@@ -1,6 +1,5 @@
 package com.souma1024.shogiv2.domain;
 
-import java.util.List;
 import java.util.Map;
 
 import lombok.AllArgsConstructor;
@@ -12,6 +11,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GameState {
     private int[][] board;
-    private Map<String, List<Integer>> capturedPieces;
+    private Map<String, int[]> capturedPieces;
     private String currentPlayerId;
 }
