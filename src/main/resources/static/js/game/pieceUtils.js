@@ -20,3 +20,8 @@ export function getPieceImage(piece) {
     const prefix = piece > 0 ? "sente" : "gote";
     return `<img src="/images/piece/${prefix}_${isProm && base !== 5 ? "promoted_" + name : name}.png" class="piece-image ${prefix}-image" />`;
 }
+
+export function toUnpromoted(piece) {
+    if (!isPromoted(piece)) return piece;
+    return piece - 100 * Math.sign(piece);
+}
