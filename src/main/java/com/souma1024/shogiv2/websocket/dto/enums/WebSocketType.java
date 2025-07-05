@@ -1,45 +1,43 @@
 package com.souma1024.shogiv2.websocket.dto.enums;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 
 public enum WebSocketType {
 
-    @JsonProperty("start_game_request")
-    START_GAME_REQUEST,
+    START_GAME_REQUEST("start_game_request"),
+    START_GAME_RESPONSE("start_game_response"),
+    MOVE_REQUEST("move_request"),
+    MOVE_RESPONSE("move_response"),
+    MOVABLE_POSITION_REQUEST("movable_position_request"),
+    MOVABLE_POSITION_RESPONSE("movable_position_response"),
+    GAME_OVER_REQUEST("game_over_request"),
+    GAME_OVER_RESPONSE("game_over_response"),
+    GAME_TIMEOUT_EVENT("game_timeout_event"),
+    SERVER_ERROR_EVENT("server_error_event"),
+    RECONNECT_REQUEST("reconnect_request"),
+    RECONNECT_RESPONSE("reconnect_response"),
+    GAME_STATE("game_state");
 
-    @JsonProperty("start_game_response")
-    START_GAME_RESPONSE,
+    private final String value;
 
-    @JsonProperty("move_request")
-    MOVE_REQUEST,
+    WebSocketType(String value) {
+        this.value = value;
+    }
 
-    @JsonProperty("move_response")
-    MOVE_RESPONSE,
+    @JsonValue
+    public String getValue() {
+        return value;
+    }
 
-    @JsonProperty("movable_position_request")
-    MOVABLE_POSITION_REQUEST,
+    @JsonCreator
+    public static WebSocketType fromValue(String value) {
+        for (WebSocketType type : values()) {
+            if (type.value.equals(value)) {
+                return type;
+            }
+        }
+        throw new IllegalArgumentException("Unknown WebSocketType: " + value);
+    }
 
-    @JsonProperty("movable_position_response")
-    MOVABLE_POSITION_RESPONSE,
-
-    @JsonProperty("game_over_request")
-    GAME_OVER_REQUEST,
-
-    @JsonProperty("game_over_response")
-    GAME_OVER_RESPONSE,
-
-    @JsonProperty("game_timeout_event")
-    GAME_TIMEOUT_EVENT,
-
-    @JsonProperty("server_error_event")
-    SERVER_ERROR_EVENT,
-
-    @JsonProperty("reconnect_request")
-    RECONNECT_REQUEST,
-
-    @JsonProperty("reconnect_response")
-    RECONNECT_RESPONSE,
-
-    @JsonProperty("game_state")
-    GAME_STATE
 }
