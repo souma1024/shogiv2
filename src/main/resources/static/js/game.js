@@ -313,3 +313,26 @@ function highlightMovableCells(movableList) {
         }
     });
 }
+
+function drawCapturedPieces(capturedMap) {
+    for (const playerId in capturedMap) {
+        const pieceList = capturedMap[playerId];
+        const kindCountMap = {};
+
+        // 駒の種類ごとにカウント
+        for (const piece of pieceList) {
+            const kind = Math.abs(piece);
+            kindCountMap[kind] = (kindCountMap[kind] || 0) + 1;
+        }
+
+        for (const kind in kindCountMap) {
+            const cellId = `capturedCell-${playerId}-${kind}`;
+            const cell = document.getElementById(cellId);
+            if (!cell) continue;
+
+            const count = kindCountMap[kind];
+            const imgHtml = getPieceImage(playerId === myPlayerId ? -kind : kind);
+            cell.innerHTML = imgHtml + (count > 1 ? `<span class="piece-count">x${count}</span>` : "");
+        }
+    }
+}
