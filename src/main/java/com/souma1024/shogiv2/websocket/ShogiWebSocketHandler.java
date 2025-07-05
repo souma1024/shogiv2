@@ -75,31 +75,41 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         Room room = roomRepository.findById(roomId)
             .orElseThrow(() -> new RuntimeException("Room not found"));
 
+        updatePlayerStatus(room, playerId);
+
+        if (bothPlayersReady(room)) {
+            startGame(room);
+        } else {
+            roomRepository.save(room);
+        }
+    }
+
+    private void updatePlayerStatus(Room room, String playerId) {
         if (playerId.equals(room.getFirstPlayerId())) {
             room.setFirstPlayerStatus(PlayerStatus.ACTIVE);
         } else if (playerId.equals(room.getSecondPlayerId())) {
             room.setSecondPlayerStatus(PlayerStatus.ACTIVE);
         }
+    }
 
-        if (room.getFirstPlayerStatus() == PlayerStatus.ACTIVE &&
-            room.getSecondPlayerStatus() == PlayerStatus.ACTIVE) {
+    private boolean bothPlayersReady(Room room) {
+        return room.getFirstPlayerStatus() == PlayerStatus.ACTIVE &&
+               room.getSecondPlayerStatus() == PlayerStatus.ACTIVE;
+    }
 
-            ShogiEngine engine = roomManager.getOrCreateEngine(roomId, room.getFirstPlayerId(), room.getSecondPlayerId());
-            GameState state = engine.toGameState();
+    private void startGame(Room room) throws Exception {
+        String roomId = room.getRoomId();
+        ShogiEngine engine = roomManager.getOrCreateEngine(roomId, room.getFirstPlayerId(), room.getSecondPlayerId());
+        GameState state = engine.toGameState();
 
-            StartGameResponse response = new StartGameResponse();
-            response.setRoomId(roomId);
-            response.setBoard(state.getBoard());
-            response.setCapturedPieces(state.getCapturedPieces());
-            response.setSenteId(room.getFirstPlayerId());
-            response.setGoteId(room.getSecondPlayerId());
+        StartGameResponse response = new StartGameResponse();
+        response.setRoomId(roomId);
+        response.setBoard(state.getBoard());
+        response.setCapturedPieces(state.getCapturedPieces());
+        response.setSenteId(room.getFirstPlayerId());
+        response.setGoteId(room.getSecondPlayerId());
 
-            roomManager.broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.START_GAME_RESPONSE, response));
-            
-        } else {
-            // 片方だけACTIVEの場合も保存
-            roomRepository.save(room);
-        }
+        roomManager.broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.START_GAME_RESPONSE, response));
     }
 
     private void handleMovablePositionRequest(MovablePositionRequest req, WebSocketSession session) throws Exception {
