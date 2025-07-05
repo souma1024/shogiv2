@@ -15,7 +15,6 @@ import com.souma1024.shogiv2.common.enums.PlayerStatus;
 import com.souma1024.shogiv2.domain.ApplyMoveResult;
 import com.souma1024.shogiv2.domain.GameState;
 import com.souma1024.shogiv2.domain.MovableQuery;
-import com.souma1024.shogiv2.domain.Player;
 import com.souma1024.shogiv2.domain.PlayerSide;
 import com.souma1024.shogiv2.domain.ShogiEngine;
 import com.souma1024.shogiv2.dto.StartGameRequest;
@@ -134,7 +133,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         List<int[]> movable = (req.getFrom() != null)
             ? engine.getMovablePositions(query)
             : engine.getDropPositions(query);
-            
+
         sendMovableResponse(session, req.getRoomId(), req.getPlayerId(), req.getFrom(), req.getPiece(), movable);
     }
 
@@ -179,48 +178,64 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
 
 
     private void handleMoveRequest(MoveRequest req, WebSocketSession session) throws Exception {
+        if (!validateMoveRequest(req, session)) return;
+
+        ShogiEngine engine = roomManager.getEngine(req.getRoomId());
+        ApplyMoveResult result = engine.applyMove(req);
+
+        sendMoveResult(req, result, engine);
+    }
+
+    private boolean validateMoveRequest(MoveRequest req, WebSocketSession session) throws Exception {
         String roomId = req.getRoomId();
         String playerId = req.getPlayerId();
 
         if (!roomManager.isRoomReady(roomId)) {
             sendError(session, roomId, "ルームが開始されていません", 1004);
-            return;
+            return false;
         }
 
-        ShogiEngine engine = roomManager.getEngine(roomId);
-        Player player = roomManager.getPlayerById(roomId, playerId);
-
-        if (player == null) {
+        if (roomManager.getPlayerById(roomId, playerId) == null) {
             sendError(session, roomId, "不正なプレイヤーID", 1005);
-            return;
+            return false;
         }
 
-        ApplyMoveResult result = engine.applyMove(req);
+        return true;
+    }
 
-        MoveResponse res = new MoveResponse();
-        res.setRoomId(roomId);
-        res.setPlayerId(playerId);
-        res.setFrom(req.getFrom());
-        res.setTo(req.getTo());
-        res.setPiece(req.getPiece());
-        res.setPromotion(req.isPromotion());
-        res.setSuccess(result.isSuccess());
-        res.setNextPlayerId(engine.getCurrentPlayerId());
-        res.setCaptured(result.getCaptured());
-        System.out.println("nextplayerID: " + engine.getCurrentPlayerId());
+    private void sendMoveResult(MoveRequest req, ApplyMoveResult result, ShogiEngine engine) throws Exception {
+        String roomId = req.getRoomId();
+        String playerId = req.getPlayerId();
+
+        MoveResponse response = new MoveResponse();
+        response.setRoomId(roomId);
+        response.setPlayerId(playerId);
+        response.setFrom(req.getFrom());
+        response.setTo(req.getTo());
+        response.setPiece(req.getPiece());
+        response.setPromotion(req.isPromotion());
+        response.setSuccess(result.isSuccess());
+        response.setNextPlayerId(engine.getCurrentPlayerId());
+        response.setCaptured(result.getCaptured());
+
+        System.out.println("nextPlayerId: " + engine.getCurrentPlayerId());
 
         if (engine.isCheckmate(engine.getTurnPlayer())) {
-            GameOverResponse over = new GameOverResponse();
-            over.setRoomId(roomId);
-            over.setPlayerId(playerId);
-            over.setWinner(playerId);
-            over.setReason(GameOverReason.TSUMI);
-
-            broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.GAME_OVER_RESPONSE, over));
+            sendGameOver(roomId, playerId);
             roomManager.removeRoom(roomId);
         } else {
-            broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.MOVE_RESPONSE, res));
+            broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.MOVE_RESPONSE, response));
         }
+    }
+
+    private void sendGameOver(String roomId, String winnerId) throws Exception {
+        GameOverResponse over = new GameOverResponse();
+        over.setRoomId(roomId);
+        over.setPlayerId(winnerId);
+        over.setWinner(winnerId);
+        over.setReason(GameOverReason.TSUMI);
+
+        broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.GAME_OVER_RESPONSE, over));
     }
 
     private void handleGameOverRequest(GameOverRequest req, WebSocketSession session) throws Exception {
