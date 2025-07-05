@@ -38,48 +38,34 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         this.roomRepository = roomRepository;
     }
 
-
-
     @Override
     public void handleTextMessage(@NonNull WebSocketSession session, @NonNull TextMessage message) throws Exception {
         try {
-            System.out.println("受信生データ: " + message.getPayload());
             JsonNode root = mapper.readTree(message.getPayload());
-            WebSocketMessage wsMessage = mapper.readValue(message.getPayload(), WebSocketMessage.class);
-            WebSocketType type = wsMessage.getType();
+            String typeString = root.get("type").asText();
+            WebSocketType type = WebSocketType.fromValue(typeString);
             JsonNode payload = root.get("payload");
 
-            switch (type) {
-
-                case START_GAME_REQUEST -> {
-                    StartGameRequest req = mapper.treeToValue(payload, StartGameRequest.class);
-                    handleStartGameRequest(req, session);
-                }
-
-                case MOVABLE_POSITION_REQUEST -> {
-                    MovablePositionRequest req = mapper.treeToValue(payload, MovablePositionRequest.class);
-                    handleMovablePositionRequest(req, session);
-                }
-
-                case MOVE_REQUEST -> {
-                    MoveRequest req = mapper.treeToValue(payload, MoveRequest.class);
-                    handleMoveRequest(req, session);
-                }
-                case GAME_OVER_REQUEST -> {
-                    GameOverRequest req = mapper.treeToValue(payload, GameOverRequest.class);
-                    handleGameOverRequest(req, session);
-                }
-                case RECONNECT_REQUEST -> {
-                    ReconnectRequest req = mapper.treeToValue(payload, ReconnectRequest.class);
-                    handleReconnectRequest(req, session);
-                }
-                default -> sendError(session, "未対応のtypeです: " + type, 1003);
-            }
-
+            dispatchMessage(session, type, payload);
         } catch (Exception e) {
             e.printStackTrace();
             sendError(session, "メッセージ処理中にエラーが発生しました", 1000);
         }
+    }
+
+    private void dispatchMessage(WebSocketSession session, WebSocketType type, JsonNode payload) throws Exception {
+        switch (type) {
+            case START_GAME_REQUEST -> handleStartGameRequest(convert(payload, StartGameRequest.class), session);
+            case MOVABLE_POSITION_REQUEST -> handleMovablePositionRequest(convert(payload, MovablePositionRequest.class), session);
+            case MOVE_REQUEST -> handleMoveRequest(convert(payload, MoveRequest.class), session);
+            case GAME_OVER_REQUEST -> handleGameOverRequest(convert(payload, GameOverRequest.class), session);
+            case RECONNECT_REQUEST -> handleReconnectRequest(convert(payload, ReconnectRequest.class), session);
+            default -> sendError(session, "未対応のtypeです: " + type, 1003);
+        }
+    }
+
+    private <T> T convert(JsonNode payload, Class<T> clazz) throws Exception {
+        return mapper.treeToValue(payload, clazz);
     }
 
     private void handleStartGameRequest(StartGameRequest req, WebSocketSession session) throws Exception {
