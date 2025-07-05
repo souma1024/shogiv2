@@ -4,10 +4,9 @@ import lombok.Data;
 
 @Data
 public class MovableQuery {
-    private int x;
-    private int y;
     private int piece;
     private boolean promotion;
     private String playerId;
     private PlayerSide turn;
+    private int[] from;
 }

@@ -104,14 +104,16 @@ public class PieceUtil {
     public static void applyMoveOnBoard(int[][] board, MoveRequest move) {
         int[] from = move.getFrom();
         int[] to = move.getTo();
-        int kind = move.getPiece();
+        int piece = move.getPiece();
         boolean promote = move.isPromotion();
 
         int toX = to[0], toY = to[1];
 
-        // 打ち駒（持ち駒を盤面に置く） [-1, -1] ならば持ち駒を打つ
-        if (from[0] == -1 && from[1] == -1) {
-            board[toY][toX] = kind;
+        // 打ち駒（持ち駒を盤面に置く） null ならば持ち駒を打つ
+        if (from == null) {
+            if (board[toY][toX] == 0) {
+                board[toY][toX] = piece;
+            }
             return;
         }
 
@@ -194,5 +196,46 @@ public class PieceUtil {
 
         return moves;
     }
+
+    public static List<int[]> getDropPositions(int[][] board, int piece, PlayerSide side, List<Integer> handPieces) {
+        List<int[]> positions = new ArrayList<>();
+
+        int basePiece = toUnpromoted(piece);
+
+        for (int y = 0; y < 9; y++) {
+            for (int x = 0; x < 9; x++) {
+                if (board[y][x] != 0) continue; // 空いてないマスは打てない
+
+                // 二歩チェック（歩のときだけ）
+                if (basePiece == Piece.FU_SENTE && isNiFu(board, x, side)) {
+                    continue;
+                }
+
+                // 打ち歩詰めチェック
+                if (basePiece == Piece.FU_SENTE && isUchiFuZume(board, x, y, side)) {
+                    continue;
+                }
+
+                // 桂馬の打ち制限（最下段に打てない）
+                if (basePiece == Piece.KEI_SENTE) {
+                    if ((side == PlayerSide.SENTE && y <= 1) || (side == PlayerSide.GOTE && y >= 7)) {
+                        continue;
+                    }
+                }
+
+                // 香車・歩も打てない行がある
+                if ((basePiece == Piece.FU_SENTE || basePiece == Piece.KYO_SENTE)) {
+                    if ((side == PlayerSide.SENTE && y == 0) || (side == PlayerSide.GOTE && y == 8)) {
+                        continue;
+                    }
+                }
+
+                positions.add(new int[] { x, y });
+            }
+        }
+
+        return positions;
+    }
+
 }
 

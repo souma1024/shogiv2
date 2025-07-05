@@ -124,13 +124,10 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         boolean promotion = req.isPromotion();
 
         // 盤座標チェック
-        if (from == null || from.length != 2) {
+        if (from != null && from.length != 2) {
             System.out.printf("無効な from 座標が指定されました: {}", Arrays.toString(from));
             return;
         }
-
-        int fromX = from[0];
-        int fromY = from[1];
 
         // ShogiEngine を取得
         ShogiEngine engine = RoomManager.getInstance().getEngine(roomId);
@@ -147,16 +144,18 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             return;
         }
 
-        // MoveQuery を仮生成（piece を渡すため）
-        MovableQuery query = new MovableQuery();
-        query.setX(fromX);
-        query.setY(fromY);
+        MovableQuery query = new MovableQuery(); 
+        query.setFrom(from);
         query.setPiece(piece);
         query.setPlayerId(playerId);
         query.setPromotion(promotion);
-        query.setTurn(null);
-        // 合法手を取得
-        List<int[]> movable = engine.getMovablePositions(query);
+        query.setTurn((isSente) ? PlayerSide.SENTE : PlayerSide.GOTE);
+
+        List<int[]> movable = (from != null)
+            ? engine.getMovablePositions(query)
+            : engine.getDropPositions(query);
+
+        
 
         // レスポンスDTO作成
         MovablePositionResponse response = new MovablePositionResponse();

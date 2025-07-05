@@ -61,14 +61,21 @@ function handleMoveResponse(res) {
     }
 
     applyMoveToBoard(res.from, res.to, res.piece, res.promotion);
-    drawCell(res.from, res.to);
+    drawCell(res.from, res.to, res.piece);
     currentTurnPlayerId = res.nextPlayerId;
     resetSelectionAndHighlight();
 }
 
 function applyMoveToBoard(from, to, piece, promotion) {
-    const [fromX, fromY] = from;
     const [toX, toY] = to;
+
+    if (from === null) {
+        // 🟡 打ち駒（持ち駒 → 盤面）
+        currentBoard[toY][toX] = piece;
+        return;
+    }
+
+    const [fromX, fromY] = from;
 
     currentBoard[fromY][fromX] = 0;
 
@@ -84,14 +91,27 @@ function resetSelectionAndHighlight() {
     document.querySelectorAll(".board-cell").forEach(c => c.classList.remove("movable-highlight"));
 }
 
-function drawCell(from, to) {
-    const [fromX, fromY] = from;
+function drawCell(from, to, piece) {
     const [toX, toY] = to;
 
-    const fromCell = document.getElementById(`cell-${fromX}-${fromY}`);
+    if (from !== null) {
+        const [fromX, fromY] = from;
+        const fromCell = document.getElementById(`cell-${fromX}-${fromY}`);
+        if (fromCell) fromCell.innerHTML = "";
+    }
+
+    if (from === null) {
+        // 打ち駒のときは、元が持ち駒フィールド
+        const kind = Math.abs(piece);
+        const capturedCellId = `capturedCell-${myPlayerId}-${kind}`;
+        const cell = document.getElementById(capturedCellId);
+        if (cell) {
+            cell.innerHTML = ""; // 手動で消す
+        }
+    }
+    
     const toCell = document.getElementById(`cell-${toX}-${toY}`);
 
-    if (fromCell) fromCell.innerHTML = "";
     if (toCell) {
         const piece = currentBoard[toY][toX];
         toCell.innerHTML = getPieceImage(piece);
@@ -126,6 +146,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function applyCapturedPieces(captured) {
     if (captured === null) return;
     const kind = captured.piece > 0 ? captured.piece : -1 * captured.piece;
+    const capturedPiece = captured.piece * -1;
     const capturedCellId = `capturedCell-${captured.owner}-${kind}`;
     const cell = document.getElementById(capturedCellId);
     if (!cell) {
@@ -134,6 +155,30 @@ function applyCapturedPieces(captured) {
     }
     cell.innerHTML = captured.piece === 0 ? "" : getPieceImage(-1 * captured.piece);
     document.getElementById(capturedCellId).addEventListener("click", () => {   
+        if (myPlayerId !== currentTurnPlayerId) {
+            console.log("⛔ あなたの手番ではありません");
+            return;
+        }
+
+        selectedFrom = {
+            from: null,
+            piece: capturedPiece // kindだけでなく符号つけたいなら Math.sign(...)
+        };
+
+        // 打てる場所の取得要求を送る
+        const request = {
+            type: "movable_position_request",
+            payload: {
+                roomId,
+                playerId: myPlayerId,
+                from: null,
+                piece: capturedPiece,
+                promotion: false
+            }
+        };
+
+        socket.send(JSON.stringify(request));
+        console.log("📤 持ち駒からの movable_position_request:", request);
     });
 }
 
@@ -185,11 +230,14 @@ function setupPieceClickHandlers() {
 }
     
 function handleFirstClick(clickedPos) {
-    selectedFrom = clickedPos;
-
     const [x, y] = clickedPos;
     const piece = currentBoard[y][x];
     const promotion = piece >= 100;
+
+    selectedFrom = {
+        from: clickedPos,
+        piece
+    };
 
     const request = {
         type: "movable_position_request",
@@ -207,26 +255,45 @@ function handleFirstClick(clickedPos) {
 }
 
 function handleSecondClick(clickedPos) {
-    const from = selectedFrom;
     const to = clickedPos;
 
-    const piece = currentBoard[from[1]][from[0]];
-    const promotion = piece >= 100;
+    if (selectedFrom.from === null) {
+        // 🟡 打ちの処理
+        const moveMsg = {
+            type: "move_request",
+            payload: {
+                roomId,
+                playerId: myPlayerId,
+                from: null,
+                to,
+                piece: selectedFrom.piece,
+                promotion: false
+            }
+        };
 
-    const moveMsg = {
-        type: "move_request",
-        payload: {
-            roomId,
-            playerId: myPlayerId,
-            from,
-            to,
-            piece,
-            promotion
-        }
-    };
+        socket.send(JSON.stringify(moveMsg));
+        console.log("📤 打ち move_request:", moveMsg);
+    } else {
+        const from = selectedFrom;
+        const piece = currentBoard[selectedFrom.from[1]][selectedFrom.from[0]];
+        const promotion = piece >= 100;
 
-    socket.send(JSON.stringify(moveMsg));
-    console.log("📤 move_request:", moveMsg);
+        const moveMsg = {
+            type: "move_request",
+            payload: {
+                roomId,
+                playerId: myPlayerId,
+                from: from.from,
+                to,
+                piece,
+                promotion
+            }
+        };
+
+        socket.send(JSON.stringify(moveMsg));
+        console.log("📤 move_request:", moveMsg);
+    }
+    
 
     // 状態リセット
     selectedFrom = null;
