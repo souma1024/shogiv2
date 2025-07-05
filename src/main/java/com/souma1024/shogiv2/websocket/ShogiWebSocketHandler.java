@@ -221,33 +221,43 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         System.out.println("nextPlayerId: " + engine.getCurrentPlayerId());
 
         if (engine.isCheckmate(engine.getTurnPlayer())) {
-            sendGameOver(roomId, playerId);
+            sendGameOver(roomId, playerId, GameOverReason.TSUMI);
             roomManager.removeRoom(roomId);
         } else {
             broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.MOVE_RESPONSE, response));
         }
     }
 
-    private void sendGameOver(String roomId, String winnerId) throws Exception {
+    private void sendGameOver(String roomId, String winnerId, GameOverReason reason) throws Exception {
         GameOverResponse over = new GameOverResponse();
         over.setRoomId(roomId);
         over.setPlayerId(winnerId);
         over.setWinner(winnerId);
-        over.setReason(GameOverReason.TSUMI);
+        over.setReason(reason);
 
         broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.GAME_OVER_RESPONSE, over));
     }
 
     private void handleGameOverRequest(GameOverRequest req, WebSocketSession session) throws Exception {
-        GameOverResponse res = new GameOverResponse();
-        res.setRoomId(req.getRoomId());
-        res.setPlayerId(req.getPlayerId());
-        res.setWinner(req.getPlayerId());
-        res.setReason(req.getReason());
+        String roomId = req.getRoomId();
+        String loserId = req.getPlayerId();
+        String winnerId = getOpponentId(roomId, loserId); // 🔄 逆のプレイヤーIDを取得
 
-        broadcastToRoom(req.getRoomId(), new WebSocketMessage(WebSocketType.GAME_OVER_RESPONSE, res));
-        roomManager.removeRoom(req.getRoomId());
+        sendGameOver(roomId, winnerId, req.getReason());
+        roomManager.removeRoom(roomId);
     }
+
+    private String getOpponentId(String roomId, String playerId) {
+        Room room = roomRepository.findById(roomId).orElseThrow();
+        if (playerId.equals(room.getFirstPlayerId())) {
+            return room.getSecondPlayerId();
+        } else if (playerId.equals(room.getSecondPlayerId())) {
+            return room.getFirstPlayerId();
+        } else {
+            throw new IllegalArgumentException("プレイヤーがルームに存在しません");
+        }
+    }
+
 
     private void handleReconnectRequest(ReconnectRequest req, WebSocketSession session) throws Exception {
         String roomId = req.getRoomId();
