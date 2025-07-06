@@ -49,7 +49,7 @@ function handleMoveResponse(res) {
 
     // update state
     applyMoveToBoard(res.from, res.to, res.piece, res.promotion);
-    drawCell(res.from, res.to, res.piece);
+    drawCell(res);
     resetSelectionAndHighlight();
 }
 

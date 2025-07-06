@@ -16,19 +16,19 @@ export function drawBoard(board, isSente) {
     }
 }
 
-export function drawCell(from, to, piece) {
-    const [toX, toY] = to;
+export function drawCell(res) {
+    const [toX, toY] = res.to;
 
-    if (from !== null) {
-        const [fromX, fromY] = from;
+    if (res.from !== null) {
+        const [fromX, fromY] = res.from;
         const fromCell = document.getElementById(`cell-${fromX}-${fromY}`);
         if (fromCell) fromCell.innerHTML = "";
     }
 
-    if (from === null) {
+    if (res.from === null) {
         // 打ち駒のときは、元が持ち駒フィールド
-        const kind = Math.abs(piece);
-        const capturedCellId = `capturedCell-${state.playerId}-${kind}`;
+        const kind = Math.abs(res.piece);
+        const capturedCellId = `capturedCell-${res.captured.owner}-${kind}`;
         const cell = document.getElementById(capturedCellId);
         if (cell) {
             cell.innerHTML = ""; // 手動で消す
@@ -73,10 +73,10 @@ export function initBoardClickHandlers() {
 }
 
 export function applyCapturedPieces(captured) {
-    if (!captured) return;
+    if (!captured || captured.count == 0) return;
     const { owner, piece, count } = captured;
     const kind = Math.abs(piece);
-    const capturedPiece = piece * -1;
+    const capturedPiece = piece;
     const capturedCellId = `capturedCell-${owner}-${kind}`;
     const cell = document.getElementById(capturedCellId);
     if (!cell) return;
