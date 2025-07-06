@@ -218,18 +218,18 @@ public class PieceUtil {
 
     private static boolean canDropAt(int[][] board, int piece, int x, int y, PlayerSide side) {
         // 二歩
-        if (isNiFu(board, x, side)) return false;
+        if (Math.abs(piece) == 1 && isNiFu(board, x, side)) return false;
 
         // 打ち歩詰め
-        if (isUchiFuZume(board, x, y, side)) return false;
+        if (Math.abs(piece) == 1 && isUchiFuZume(board, x, y, side)) return false;
 
         // 桂馬の打ち制限
-        if (piece == Piece.KEI_SENTE || piece == Piece.KEI_GOTE) {
+        if (Math.abs(piece) == 3) {
             if ((side == PlayerSide.SENTE && y <= 1) || (side == PlayerSide.GOTE && y >= 7)) return false;
         }
 
         // 歩・香の最下段制限
-        if (piece == Piece.FU_SENTE || piece == Piece.FU_GOTE || piece == Piece.KYO_SENTE || piece == Piece.KYO_GOTE) {
+        if (Math.abs(piece) == 1 || Math.abs(piece) == 2) {
             if ((side == PlayerSide.SENTE && y == 0) || (side == PlayerSide.GOTE && y == 8)) return false;
         }
 

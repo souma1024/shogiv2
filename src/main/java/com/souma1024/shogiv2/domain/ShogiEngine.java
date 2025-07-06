@@ -103,6 +103,12 @@ public class ShogiEngine {
             if (hand[actualPiece] == 0) {
                 System.out.println("❌ 持ち駒に指定された駒がありません");
                 return new ApplyMoveResult(false, null);
+            } else {
+                hand[actualPiece]--;
+                capturedPiece = new CapturedPiece();
+                capturedPiece.setOwner(move.getPlayerId());
+                capturedPiece.setPiece(actualPiece);
+                capturedPiece.setCount(hand[actualPiece]);
             }
         } else {
             int captured = getPieceAt(to[0], to[1]);
@@ -112,7 +118,7 @@ public class ShogiEngine {
 
                 capturedPiece = new CapturedPiece();
                 capturedPiece.setOwner(move.getPlayerId());
-                capturedPiece.setPiece(captured);
+                capturedPiece.setPiece(-1 * captured);
                 capturedPiece.setCount(capturedPieces.get(move.getPlayerId())[actualPiece]);
             }
 
