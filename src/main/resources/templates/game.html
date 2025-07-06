@@ -28,7 +28,7 @@
             </div>
             
             <div class="captured-pieces gote-hand">
-                <div th:each="i : ${#numbers.sequence(1,7)}"
+                <div th:each="i : ${#numbers.sequence(7, 1, -1)}"
                     th:attr="id=${'capturedCell-' + goteId + '-' + i}"
                     class="captured-cell">
                 </div>
