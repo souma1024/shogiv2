@@ -134,3 +134,26 @@ export function applyMoveToBoard(from, to, piece, promotion) {
     if (promotion) piece = promote(piece); // 成りを反映
     state.board[toY][toX] = piece;
 }
+
+export function showPromotePopupAtCell(to, callback) {
+    const popup = document.getElementById("promote-popup");
+    const [x, y] = to;
+    const cell = document.getElementById(`cell-${x}-${y}`);
+
+    if (!cell) return;
+    const rect = cell.getBoundingClientRect();
+
+    popup.style.left = `${rect.left + window.scrollX}px`;
+    popup.style.top = `${rect.top + window.scrollY}px`;
+
+    popup.classList.remove("hidden");
+
+    document.getElementById("promote-yes").onclick = () => {
+        popup.classList.add("hidden");
+        callback(true);
+    };
+    document.getElementById("promote-no").onclick = () => {
+        popup.classList.add("hidden");
+        callback(false);
+    };
+}

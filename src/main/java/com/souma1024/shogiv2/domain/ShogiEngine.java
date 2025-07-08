@@ -140,6 +140,10 @@ public class ShogiEngine {
         int piece = move.getPiece();
         PlayerSide side = getTurnPlayer();
 
+        if (isSameOwner(to[0], to[1], side)) {
+            return false;
+        } 
+
         if (from == null) {
             // 盤面・持ち駒情報を使って合法打ち位置を列挙
             int[] hand = capturedPieces.get(move.getPlayerId());
@@ -203,6 +207,10 @@ public class ShogiEngine {
         int[] handPieces = capturedPieces.get(playerId); // プレイヤーの持ち駒一覧
 
         return PieceUtil.getDropPositions(board, piece, side, handPieces);
+    }
+
+    public boolean isSameOwner(int x, int y, PlayerSide side) {
+        return (getPieceAt(x, y) > 0 && side == PlayerSide.SENTE) || (getPieceAt(x, y) < 0 && side == PlayerSide.GOTE);
     }
 
     public boolean isCheckmate(PlayerSide playerSide) {

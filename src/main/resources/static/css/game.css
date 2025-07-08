@@ -115,3 +115,16 @@
   border-radius: 3px;
   pointer-events: none; /* クリックイベントの邪魔をしない */
 }
+
+.popup {
+  position: absolute;
+  background-color: white;
+  border: 1px solid #444;
+  padding: 10px;
+  border-radius: 6px;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+}
+.hidden {
+  display: none;
+}

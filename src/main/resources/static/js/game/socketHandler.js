@@ -1,6 +1,6 @@
 import { state } from './stateManager.js';
-import { drawBoard, applyMoveToBoard, resetSelectionAndHighlight, applyCapturedPieces, initBoardClickHandlers,  highlightMovableCells, drawCell } from './boardRenderer.js';
-import { getPieceImage, isPromoted } from './pieceUtils.js';
+import { drawBoard, applyMoveToBoard, resetSelectionAndHighlight, applyCapturedPieces, initBoardClickHandlers,  highlightMovableCells, drawCell, showPromotePopupAtCell } from './boardRenderer.js';
+import { getPieceImage, isPromoted, isPromotionZone} from './pieceUtils.js';
 
 export function setupWebSocket(roomId, playerId) {
     state.socket = new WebSocket(`ws://${location.host}/ws/shogi?roomId=${roomId}&playerId=${playerId}`);
@@ -71,41 +71,39 @@ export function sendMovablePositionRequest(from, piece) {
 
 export function sendMoveRequest(fromObj, to) {
     const from = fromObj;
-    console.log(from);
+    
+    if (JSON.stringify(from.from) === JSON.stringify(to)) return;
 
     if (from.from === null) {
         const piece = fromObj.piece;
         const promotion = Math.abs(piece) >= 100;
-        const msg = {
-            type: "move_request",
-            payload: {
-                roomId: state.roomId,
-                playerId: state.playerId,
-                from: from.from,
-                to,
-                piece,
-                promotion
-            }
-        };
-        send(msg);
-        console.log("📤 move_request:", msg);
+        sendMessage(from.from, to, piece, promotion);
     } else {
         const piece = state.board[from.from[1]][from.from[0]];
-        const promotion = isPromoted(piece);
 
-        const moveMsg = {
-            type: "move_request",
-            payload: {
-                roomId: state.roomId,
-                playerId: state.playerId,
-                from: from.from,
-                to,
-                piece,
-                promotion
-            }
-        };
-
-        send(moveMsg);
-        console.log("📤 move_request:", moveMsg);
+        if (isPromotionZone(piece, from.from, to)) {
+            showPromotePopupAtCell(to, (promote) => {
+                sendMessage(from.from, to, piece, promote);
+            });
+        } else {
+            sendMessage(from.from, to, piece, false);
+        }
     }
+}
+
+function sendMessage(from, to, piece, promotion) {
+    const moveMsg = {
+        type: "move_request",
+        payload: {
+            roomId: state.roomId,
+            playerId: state.playerId,
+            from: from,
+            to,
+            piece,
+            promotion
+        }
+    };
+
+    send(moveMsg);
+    console.log("📤 move_request:", moveMsg);
 }
