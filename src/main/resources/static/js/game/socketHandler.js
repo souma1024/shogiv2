@@ -71,7 +71,8 @@ export function sendMovablePositionRequest(from, piece) {
 
 export function sendMoveRequest(fromObj, to) {
     const from = fromObj;
-    console.log(from);
+    
+    if (JSON.stringify(from.from) === JSON.stringify(to)) return;
 
     if (from.from === null) {
         const piece = fromObj.piece;
