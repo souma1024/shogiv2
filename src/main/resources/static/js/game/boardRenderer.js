@@ -134,3 +134,4 @@ export function applyMoveToBoard(from, to, piece, promotion) {
     if (promotion) piece = promote(piece); // 成りを反映
     state.board[toY][toX] = piece;
 }
+

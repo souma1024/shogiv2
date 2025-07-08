@@ -25,3 +25,17 @@ export function toUnpromoted(piece) {
     if (!isPromoted(piece)) return piece;
     return piece - 100 * Math.sign(piece);
 }
+
+export function isPromotionZone(piece, from, to) {
+    const kind = Math.abs(piece);
+    const promotable = [1, 2, 3, 4, 6, 7];
+
+    if (!promotable.includes(kind)) return false;
+
+    if (piece > 0) {
+        return from[1] <= 2 || to[1] <= 2;
+    } else {
+        return from[1] >= 6 || to[1] >= 6;
+    }
+    
+}
