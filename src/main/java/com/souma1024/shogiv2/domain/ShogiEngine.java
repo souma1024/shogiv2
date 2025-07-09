@@ -107,7 +107,7 @@ public class ShogiEngine {
                 hand[actualPiece]--;
                 capturedPiece = new CapturedPiece();
                 capturedPiece.setOwner(move.getPlayerId());
-                capturedPiece.setPiece(actualPiece);
+                capturedPiece.setPiece(piece);
                 capturedPiece.setCount(hand[actualPiece]);
             }
         } else {
