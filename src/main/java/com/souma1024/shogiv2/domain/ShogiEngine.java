@@ -112,7 +112,7 @@ public class ShogiEngine {
             }
         } else {
             int captured = getPieceAt(to[0], to[1]);
-            int actualPiece = Math.abs(captured);
+            int actualPiece = Math.abs(PieceUtil.toUnpromoted(captured));
             if (captured != 0) {
                 capturedPieces.get(getCurrentPlayerId())[actualPiece]++;
 

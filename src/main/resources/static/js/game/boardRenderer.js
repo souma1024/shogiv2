@@ -1,5 +1,5 @@
 import { state } from './stateManager.js';
-import { getPieceImage, promote } from './pieceUtils.js';
+import { getPieceImage, promote, toUnpromoted } from './pieceUtils.js';
 import { sendMovablePositionRequest, sendMoveRequest } from './socketHandler.js';
 
 export function drawBoard(board, isSente) {
@@ -39,7 +39,7 @@ export function drawCell(res) {
 
     if (toCell) {
         const piece = state.board[toY][toX];
-        toCell.innerHTML = getPieceImage(piece);
+        toCell.innerHTML = getPieceImage(piece, res.promotion);
     }
 }
 
@@ -75,7 +75,8 @@ export function initBoardClickHandlers() {
 export function applyCapturedPieces(captured) {
     if (!captured || captured.count == 0) return;
     const { owner, piece, count } = captured;
-    const kind = Math.abs(piece);
+
+    const kind = toUnpromoted(Math.abs(piece));
     const capturedPiece = piece;
     const capturedCellId = `capturedCell-${owner}-${kind}`;
     const cell = document.getElementById(capturedCellId);

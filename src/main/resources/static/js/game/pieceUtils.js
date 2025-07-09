@@ -11,13 +11,14 @@ const pieceNameMap = {
     6: "kaku", 7: "hisya", 77: "gyoku"
 };
 
-export function getPieceImage(piece) {
+export function getPieceImage(piece, promotion) {
     if (piece === 0) return "";
     const abs = Math.abs(piece);
-    const isProm = isPromoted(piece);
-    const name = pieceNameMap[abs];
+    const base = toUnpromoted(abs);
+    const name = pieceNameMap[base];
+    
     const prefix = piece > 0 ? "sente" : "gote";
-    return `<img src="/images/piece/${prefix}_${isProm ? "promoted_" + name : name}.png" class="piece-image ${prefix}-image" />`;
+    return `<img src="/images/piece/${prefix}_${promotion ? "promoted_" + name : name}.png" class="piece-image ${prefix}-image" />`;
 }
 
 export function toUnpromoted(piece) {
