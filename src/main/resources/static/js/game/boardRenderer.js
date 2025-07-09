@@ -87,13 +87,20 @@ export function applyCapturedPieces(captured) {
 
      if (count > 1) {
         const countSpan = document.createElement("div");
-        countSpan.className = "piece-count";
+        countSpan.classList.add("piece-count");
+        if (state.isSente) {
+            countSpan.classList.add("sente-count");
+        } else {
+            countSpan.classList.add("gote-count");
+        }
+        
         countSpan.textContent = `×${count}`;
         wrapper.appendChild(countSpan);
     }
+    cell.innerHTML = "";
 
     cell.appendChild(wrapper);
-
+    cell.onclick = null;
     cell.onclick = () => {
         if (state.playerId !== state.currentPlayerId) return;
         state.selectedFrom = {
