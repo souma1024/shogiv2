@@ -170,8 +170,29 @@ public class ShogiEngine {
             return false;
         }
 
-        return true;
+        List<int[]> movable = PieceUtil.getMovablePositions(board, from[0], from[1]);
+        List<MoveRequest> candidates = new ArrayList<>();
 
+        for (int[] target : movable) {
+            MoveRequest candidate = new MoveRequest();
+            candidate.setFrom(from);
+            candidate.setTo(target);
+            candidate.setPiece(piece);
+            candidate.setPromotion(move.isPromotion()); // 成りも含めて
+            candidate.setPlayerId(move.getPlayerId());
+            candidates.add(candidate);
+        }
+
+        List<MoveRequest> legalMoves = PieceUtil.getLegalMovesOnly(board, candidates, side);
+
+        boolean isLegal = legalMoves.stream()
+            .anyMatch(m -> Arrays.equals(m.getTo(), to));
+
+        if (!isLegal) {
+            System.out.println("❌ この移動は合法手ではありません");
+        }
+
+        return isLegal;
     }
 
     public List<int[]> getMovablePositions(MovableQuery query) {
