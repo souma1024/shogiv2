@@ -107,12 +107,12 @@ public class ShogiEngine {
                 hand[actualPiece]--;
                 capturedPiece = new CapturedPiece();
                 capturedPiece.setOwner(move.getPlayerId());
-                capturedPiece.setPiece(actualPiece);
+                capturedPiece.setPiece(piece);
                 capturedPiece.setCount(hand[actualPiece]);
             }
         } else {
             int captured = getPieceAt(to[0], to[1]);
-            int actualPiece = Math.abs(captured);
+            int actualPiece = Math.abs(PieceUtil.toUnpromoted(captured));
             if (captured != 0) {
                 capturedPieces.get(getCurrentPlayerId())[actualPiece]++;
 
@@ -170,8 +170,29 @@ public class ShogiEngine {
             return false;
         }
 
-        return true;
+        List<int[]> movable = PieceUtil.getMovablePositions(board, from[0], from[1]);
+        List<MoveRequest> candidates = new ArrayList<>();
 
+        for (int[] target : movable) {
+            MoveRequest candidate = new MoveRequest();
+            candidate.setFrom(from);
+            candidate.setTo(target);
+            candidate.setPiece(piece);
+            candidate.setPromotion(move.isPromotion()); // 成りも含めて
+            candidate.setPlayerId(move.getPlayerId());
+            candidates.add(candidate);
+        }
+
+        List<MoveRequest> legalMoves = PieceUtil.getLegalMovesOnly(board, candidates, side);
+
+        boolean isLegal = legalMoves.stream()
+            .anyMatch(m -> Arrays.equals(m.getTo(), to));
+
+        if (!isLegal) {
+            System.out.println("❌ この移動は合法手ではありません");
+        }
+
+        return isLegal;
     }
 
     public List<int[]> getMovablePositions(MovableQuery query) {
