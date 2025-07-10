@@ -52,6 +52,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
+    //リクエストのタイプによって呼び出すメソッドを変える
     private void dispatchMessage(WebSocketSession session, WebSocketType type, JsonNode payload) throws Exception {
         switch (type) {
             case START_GAME_REQUEST -> handleStartGameRequest(convert(payload, StartGameRequest.class), session);
