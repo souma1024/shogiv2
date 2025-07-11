@@ -1,4 +1,4 @@
-package com.souma1024.shogiv2.domain;
+package com.souma1024.shogiv2.domain.model;
 
 public class Piece {
     // --- 歩 ---

@@ -1,8 +1,8 @@
 package com.souma1024.shogiv2.websocket;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.souma1024.shogiv2.domain.Player;
-import com.souma1024.shogiv2.domain.ShogiEngine;
+import com.souma1024.shogiv2.domain.engine.ShogiEngine;
+import com.souma1024.shogiv2.domain.model.Player;
 import com.souma1024.shogiv2.websocket.dto.WebSocketMessage;
 
 import java.util.List;

@@ -2,9 +2,9 @@ package com.souma1024.shogiv2.factory;
 
 import java.util.List;
 
-import com.souma1024.shogiv2.domain.ApplyMoveResult;
-import com.souma1024.shogiv2.domain.GameState;
-import com.souma1024.shogiv2.domain.ShogiEngine;
+import com.souma1024.shogiv2.domain.engine.ShogiEngine;
+import com.souma1024.shogiv2.domain.model.ApplyMoveResult;
+import com.souma1024.shogiv2.domain.model.GameState;
 import com.souma1024.shogiv2.dto.StartGameResponse;
 import com.souma1024.shogiv2.model.Room;
 import com.souma1024.shogiv2.websocket.dto.GameOverResponse;

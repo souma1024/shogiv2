@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.souma1024.shogiv2.domain.Player;
-import com.souma1024.shogiv2.domain.PlayerSide;
+import com.souma1024.shogiv2.domain.model.Player;
+import com.souma1024.shogiv2.domain.model.PlayerSide;
 import com.souma1024.shogiv2.dto.CreateRoomRequest;
 import com.souma1024.shogiv2.dto.CreateRoomResponse;
 import com.souma1024.shogiv2.dto.ErrorResponse;

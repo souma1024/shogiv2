@@ -1,4 +1,4 @@
-package com.souma1024.shogiv2.domain;
+package com.souma1024.shogiv2.domain.engine;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6,6 +6,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.souma1024.shogiv2.domain.model.ApplyMoveResult;
+import com.souma1024.shogiv2.domain.model.GameState;
+import com.souma1024.shogiv2.domain.model.MovableQuery;
+import com.souma1024.shogiv2.domain.model.Piece;
+import com.souma1024.shogiv2.domain.model.PieceUtil;
+import com.souma1024.shogiv2.domain.model.PlayerSide;
 import com.souma1024.shogiv2.websocket.dto.CapturedPiece;
 import com.souma1024.shogiv2.websocket.dto.MoveRequest;
 

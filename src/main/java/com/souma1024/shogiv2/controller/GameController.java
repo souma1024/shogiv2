@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.souma1024.shogiv2.domain.Player;
+import com.souma1024.shogiv2.domain.model.Player;
 import com.souma1024.shogiv2.websocket.RoomManager;
 
 @Controller
