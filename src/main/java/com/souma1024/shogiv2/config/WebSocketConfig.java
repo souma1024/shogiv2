@@ -1,4 +1,4 @@
-package com.souma1024.shogiv2.websocket.config;
+package com.souma1024.shogiv2.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;
