@@ -3,7 +3,7 @@ package com.souma1024.shogiv2.websocket;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.souma1024.shogiv2.domain.engine.ShogiEngine;
 import com.souma1024.shogiv2.domain.model.Player;
-import com.souma1024.shogiv2.websocket.dto.WebSocketMessage;
+import com.souma1024.shogiv2.dto.websocket.WebSocketMessage;
 
 import java.util.List;
 import java.util.Map;

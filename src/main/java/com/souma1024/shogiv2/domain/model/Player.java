@@ -1,5 +1,7 @@
 package com.souma1024.shogiv2.domain.model;
 
+import com.souma1024.shogiv2.enums.common.PlayerSide;
+
 public class Player {
     private final String id;           // DBから渡されたプレイヤーID
     private final PlayerSide side;     // SENTE or GOTE

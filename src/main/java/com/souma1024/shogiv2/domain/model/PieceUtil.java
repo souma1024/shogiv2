@@ -3,7 +3,8 @@ package com.souma1024.shogiv2.domain.model;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.souma1024.shogiv2.websocket.dto.MoveRequest;
+import com.souma1024.shogiv2.dto.websocket.request.MoveRequest;
+import com.souma1024.shogiv2.enums.common.PlayerSide;
 
 public class PieceUtil {
     private PieceUtil() {

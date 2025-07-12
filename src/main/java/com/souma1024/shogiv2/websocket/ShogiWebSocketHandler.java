@@ -11,20 +11,30 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.souma1024.shogiv2.common.enums.PlayerStatus;
 import com.souma1024.shogiv2.domain.engine.ShogiEngine;
-import com.souma1024.shogiv2.domain.model.ApplyMoveResult;
 import com.souma1024.shogiv2.domain.model.GameState;
-import com.souma1024.shogiv2.domain.model.MovableQuery;
-import com.souma1024.shogiv2.domain.model.PlayerSide;
-import com.souma1024.shogiv2.dto.StartGameRequest;
-import com.souma1024.shogiv2.dto.StartGameResponse;
+import com.souma1024.shogiv2.domain.support.ApplyMoveResult;
+import com.souma1024.shogiv2.domain.support.MovableQuery;
+import com.souma1024.shogiv2.dto.gamestart.StartGameRequest;
+import com.souma1024.shogiv2.dto.gamestart.StartGameResponse;
+import com.souma1024.shogiv2.dto.websocket.WebSocketMessage;
+import com.souma1024.shogiv2.dto.websocket.common.ServerErrorEvent;
+import com.souma1024.shogiv2.dto.websocket.request.GameOverRequest;
+import com.souma1024.shogiv2.dto.websocket.request.MovablePositionRequest;
+import com.souma1024.shogiv2.dto.websocket.request.MoveRequest;
+import com.souma1024.shogiv2.dto.websocket.request.ReconnectRequest;
+import com.souma1024.shogiv2.dto.websocket.response.GameOverResponse;
+import com.souma1024.shogiv2.dto.websocket.response.GameStateResponse;
+import com.souma1024.shogiv2.dto.websocket.response.MovablePositionResponse;
+import com.souma1024.shogiv2.dto.websocket.response.MoveResponse;
+import com.souma1024.shogiv2.dto.websocket.response.ReconnectResponse;
+import com.souma1024.shogiv2.entity.Room;
+import com.souma1024.shogiv2.enums.common.PlayerSide;
+import com.souma1024.shogiv2.enums.common.PlayerStatus;
+import com.souma1024.shogiv2.enums.game.GameOverReason;
+import com.souma1024.shogiv2.enums.websocket.WebSocketType;
 import com.souma1024.shogiv2.factory.ResponseFactory;
-import com.souma1024.shogiv2.model.Room;
 import com.souma1024.shogiv2.repository.RoomRepository;
-import com.souma1024.shogiv2.websocket.dto.*;
-import com.souma1024.shogiv2.websocket.dto.enums.GameOverReason;
-import com.souma1024.shogiv2.websocket.dto.enums.WebSocketType;
 
 public class ShogiWebSocketHandler extends TextWebSocketHandler {
 
@@ -276,7 +286,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, ok)
         )));
 
-        GameStateDto state = new GameStateDto();
+        GameStateResponse state = new GameStateResponse();
         state.setRoomId(roomId);
         state.setBoard(engine.getBoard());
         state.setCapturedPieces(engine.getCapturedPieces());

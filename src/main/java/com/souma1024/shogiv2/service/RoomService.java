@@ -9,10 +9,10 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import com.souma1024.shogiv2.common.enums.RoomStatus;
-import com.souma1024.shogiv2.common.enums.PlayerStatus;
-import com.souma1024.shogiv2.dto.JoinRoomResqponse;
-import com.souma1024.shogiv2.model.Room;
+import com.souma1024.shogiv2.dto.room.JoinRoomResqponse;
+import com.souma1024.shogiv2.entity.Room;
+import com.souma1024.shogiv2.enums.common.PlayerStatus;
+import com.souma1024.shogiv2.enums.common.RoomStatus;
 import com.souma1024.shogiv2.repository.RoomRepository;
 
 import jakarta.transaction.Transactional;

@@ -3,17 +3,17 @@ package com.souma1024.shogiv2.factory;
 import java.util.List;
 
 import com.souma1024.shogiv2.domain.engine.ShogiEngine;
-import com.souma1024.shogiv2.domain.model.ApplyMoveResult;
 import com.souma1024.shogiv2.domain.model.GameState;
-import com.souma1024.shogiv2.dto.StartGameResponse;
-import com.souma1024.shogiv2.model.Room;
-import com.souma1024.shogiv2.websocket.dto.GameOverResponse;
-import com.souma1024.shogiv2.websocket.dto.MovablePositionResponse;
-import com.souma1024.shogiv2.websocket.dto.MoveRequest;
-import com.souma1024.shogiv2.websocket.dto.MoveResponse;
-import com.souma1024.shogiv2.websocket.dto.ReconnectRequest;
-import com.souma1024.shogiv2.websocket.dto.ReconnectResponse;
-import com.souma1024.shogiv2.websocket.dto.enums.GameOverReason;
+import com.souma1024.shogiv2.domain.support.ApplyMoveResult;
+import com.souma1024.shogiv2.dto.gamestart.StartGameResponse;
+import com.souma1024.shogiv2.dto.websocket.request.MoveRequest;
+import com.souma1024.shogiv2.dto.websocket.request.ReconnectRequest;
+import com.souma1024.shogiv2.dto.websocket.response.GameOverResponse;
+import com.souma1024.shogiv2.dto.websocket.response.MovablePositionResponse;
+import com.souma1024.shogiv2.dto.websocket.response.MoveResponse;
+import com.souma1024.shogiv2.dto.websocket.response.ReconnectResponse;
+import com.souma1024.shogiv2.entity.Room;
+import com.souma1024.shogiv2.enums.game.GameOverReason;
 
 public class ResponseFactory {
     

@@ -6,14 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.souma1024.shogiv2.domain.model.ApplyMoveResult;
 import com.souma1024.shogiv2.domain.model.GameState;
-import com.souma1024.shogiv2.domain.model.MovableQuery;
 import com.souma1024.shogiv2.domain.model.Piece;
 import com.souma1024.shogiv2.domain.model.PieceUtil;
-import com.souma1024.shogiv2.domain.model.PlayerSide;
-import com.souma1024.shogiv2.websocket.dto.CapturedPiece;
-import com.souma1024.shogiv2.websocket.dto.MoveRequest;
+import com.souma1024.shogiv2.domain.support.ApplyMoveResult;
+import com.souma1024.shogiv2.domain.support.MovableQuery;
+import com.souma1024.shogiv2.dto.websocket.common.CapturedPiece;
+import com.souma1024.shogiv2.dto.websocket.request.MoveRequest;
+import com.souma1024.shogiv2.enums.common.PlayerSide;
 
 public class ShogiEngine {
     private final int[][] board = new int[9][9];
