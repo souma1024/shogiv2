@@ -35,11 +35,12 @@ import com.souma1024.shogiv2.enums.game.GameOverReason;
 import com.souma1024.shogiv2.enums.websocket.WebSocketType;
 import com.souma1024.shogiv2.factory.ResponseFactory;
 import com.souma1024.shogiv2.repository.RoomRepository;
+import com.souma1024.shogiv2.service.RoomSessionManager;
 
 public class ShogiWebSocketHandler extends TextWebSocketHandler {
 
     private final ObjectMapper mapper = new ObjectMapper();
-    private final RoomManager roomManager = RoomManager.getInstance();
+    private final RoomSessionManager roomManager = RoomSessionManager.getInstance();
     
     private final RoomRepository roomRepository;
 

@@ -1,4 +1,4 @@
-package com.souma1024.shogiv2.websocket;
+package com.souma1024.shogiv2.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.souma1024.shogiv2.domain.engine.ShogiEngine;
@@ -13,17 +13,17 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.springframework.web.socket.WebSocketSession;
 
-public class RoomManager {
-    private static final RoomManager instance = new RoomManager();
+public class RoomSessionManager {
+    private static final RoomSessionManager instance = new RoomSessionManager();
 
     private final Map<String, List<WebSocketSession>> sessionMap = new ConcurrentHashMap<>();
     private final Map<String, ShogiEngine> engineMap = new ConcurrentHashMap<>();
     private final Map<String, Player[]> playerMap = new ConcurrentHashMap<>();
     private final Set<String> startedRooms = ConcurrentHashMap.newKeySet();
 
-    private RoomManager() {}
+    private RoomSessionManager() {}
 
-    public static RoomManager getInstance() {
+    public static RoomSessionManager getInstance() {
         return instance;
     }
 
