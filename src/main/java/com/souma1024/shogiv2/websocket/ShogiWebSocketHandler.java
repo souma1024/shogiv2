@@ -11,19 +11,30 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.souma1024.shogiv2.common.enums.PlayerStatus;
-import com.souma1024.shogiv2.domain.ApplyMoveResult;
-import com.souma1024.shogiv2.domain.GameState;
-import com.souma1024.shogiv2.domain.MovableQuery;
-import com.souma1024.shogiv2.domain.PlayerSide;
-import com.souma1024.shogiv2.domain.ShogiEngine;
-import com.souma1024.shogiv2.dto.StartGameRequest;
-import com.souma1024.shogiv2.dto.StartGameResponse;
-import com.souma1024.shogiv2.model.Room;
+import com.souma1024.shogiv2.domain.engine.ShogiEngine;
+import com.souma1024.shogiv2.domain.model.GameState;
+import com.souma1024.shogiv2.domain.support.ApplyMoveResult;
+import com.souma1024.shogiv2.domain.support.MovableQuery;
+import com.souma1024.shogiv2.dto.gamestart.StartGameRequest;
+import com.souma1024.shogiv2.dto.gamestart.StartGameResponse;
+import com.souma1024.shogiv2.dto.websocket.WebSocketMessage;
+import com.souma1024.shogiv2.dto.websocket.common.ServerErrorEvent;
+import com.souma1024.shogiv2.dto.websocket.request.GameOverRequest;
+import com.souma1024.shogiv2.dto.websocket.request.MovablePositionRequest;
+import com.souma1024.shogiv2.dto.websocket.request.MoveRequest;
+import com.souma1024.shogiv2.dto.websocket.request.ReconnectRequest;
+import com.souma1024.shogiv2.dto.websocket.response.GameOverResponse;
+import com.souma1024.shogiv2.dto.websocket.response.GameStateResponse;
+import com.souma1024.shogiv2.dto.websocket.response.MovablePositionResponse;
+import com.souma1024.shogiv2.dto.websocket.response.MoveResponse;
+import com.souma1024.shogiv2.dto.websocket.response.ReconnectResponse;
+import com.souma1024.shogiv2.entity.Room;
+import com.souma1024.shogiv2.enums.common.PlayerSide;
+import com.souma1024.shogiv2.enums.common.PlayerStatus;
+import com.souma1024.shogiv2.enums.game.GameOverReason;
+import com.souma1024.shogiv2.enums.websocket.WebSocketType;
+import com.souma1024.shogiv2.factory.ResponseFactory;
 import com.souma1024.shogiv2.repository.RoomRepository;
-import com.souma1024.shogiv2.websocket.dto.*;
-import com.souma1024.shogiv2.websocket.dto.enums.GameOverReason;
-import com.souma1024.shogiv2.websocket.dto.enums.WebSocketType;
 
 public class ShogiWebSocketHandler extends TextWebSocketHandler {
 
@@ -32,7 +43,6 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
     
     private final RoomRepository roomRepository;
 
-    
     public ShogiWebSocketHandler(RoomRepository roomRepository) {
         this.roomRepository = roomRepository;
     }
@@ -52,6 +62,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         }
     }
 
+    //リクエストのタイプによって呼び出すメソッドを変える
     private void dispatchMessage(WebSocketSession session, WebSocketType type, JsonNode payload) throws Exception {
         switch (type) {
             case START_GAME_REQUEST -> handleStartGameRequest(convert(payload, StartGameRequest.class), session);
@@ -101,12 +112,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         ShogiEngine engine = roomManager.getOrCreateEngine(roomId, room.getFirstPlayerId(), room.getSecondPlayerId());
         GameState state = engine.toGameState();
 
-        StartGameResponse response = new StartGameResponse();
-        response.setRoomId(roomId);
-        response.setBoard(state.getBoard());
-        response.setCapturedPieces(state.getCapturedPieces());
-        response.setSenteId(room.getFirstPlayerId());
-        response.setGoteId(room.getSecondPlayerId());
+        StartGameResponse response = ResponseFactory.createStartGameResponse(roomId, state, room);
 
         roomManager.broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.START_GAME_RESPONSE, response));
     }
@@ -161,13 +167,8 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void sendMovableResponse(WebSocketSession session, String roomId, String playerId, int[] from, int piece, List<int[]> movable) throws Exception {
-        MovablePositionResponse response = new MovablePositionResponse();
-        response.setRoomId(roomId);
-        response.setPlayerId(playerId);
-        response.setFrom(from);
-        response.setPiece(piece);
-        response.setMovable(movable);
-
+        MovablePositionResponse response = ResponseFactory.createMovablePositionResponse(roomId, playerId, from, piece, movable);
+        
         send(session, WebSocketType.MOVABLE_POSITION_RESPONSE, response);
     }
 
@@ -204,36 +205,21 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
     }
 
     private void sendMoveResult(MoveRequest req, ApplyMoveResult result, ShogiEngine engine) throws Exception {
-        String roomId = req.getRoomId();
-        String playerId = req.getPlayerId();
 
-        MoveResponse response = new MoveResponse();
-        response.setRoomId(roomId);
-        response.setPlayerId(playerId);
-        response.setFrom(req.getFrom());
-        response.setTo(req.getTo());
-        response.setPiece(req.getPiece());
-        response.setPromotion(req.isPromotion());
-        response.setSuccess(result.isSuccess());
-        response.setNextPlayerId(engine.getCurrentPlayerId());
-        response.setCaptured(result.getCaptured());
-
+        MoveResponse response = ResponseFactory.createMoveResponse(req, result, engine);
+        
         System.out.println("nextPlayerId: " + engine.getCurrentPlayerId());
 
         if (engine.isCheckmate(engine.getTurnPlayer())) {
-            sendGameOver(roomId, playerId, GameOverReason.TSUMI);
-            roomManager.removeRoom(roomId);
+            sendGameOver(req.getRoomId(), req.getPlayerId(), GameOverReason.TSUMI);
+            roomManager.removeRoom(req.getRoomId());
         } else {
-            broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.MOVE_RESPONSE, response));
+            broadcastToRoom(req.getRoomId(), new WebSocketMessage(WebSocketType.MOVE_RESPONSE, response));
         }
     }
 
     private void sendGameOver(String roomId, String winnerId, GameOverReason reason) throws Exception {
-        GameOverResponse over = new GameOverResponse();
-        over.setRoomId(roomId);
-        over.setPlayerId(winnerId);
-        over.setWinner(winnerId);
-        over.setReason(reason);
+        GameOverResponse over = ResponseFactory.createGameOverResponse(roomId, winnerId, reason);
 
         broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.GAME_OVER_RESPONSE, over));
     }
@@ -300,7 +286,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, ok)
         )));
 
-        GameStateDto state = new GameStateDto();
+        GameStateResponse state = new GameStateResponse();
         state.setRoomId(roomId);
         state.setBoard(engine.getBoard());
         state.setCapturedPieces(engine.getCapturedPieces());
