@@ -295,16 +295,19 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         String roomId = extractRoomId(session);
         String playerId = extractPlayerId(session);
         if (roomId != null && playerId != null) {
-            roomManager.addSession(roomId, session);
+            roomManager.addSession(roomId, playerId, session);
             System.out.println("🟢 WebSocket接続: " + session.getId() + " → room " + roomId + " / player " + playerId);
+        } else {
+            session.close();
         }
     }
 
     @Override
     public void afterConnectionClosed(@NonNull WebSocketSession session, @NonNull CloseStatus status) throws Exception {
         String roomId = extractRoomId(session);
+        String playerId = extractPlayerId(session);
         if (roomId != null) {
-            roomManager.removeSession(roomId, session);
+            roomManager.removeSession(roomId, playerId);
         }
     }
 
