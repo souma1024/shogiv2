@@ -37,26 +37,26 @@ public class GameStartController {
                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         if (playerId.equals(room.getFirstPlayerId())) {
-                room.setFirstPlayerStatus(PlayerStatus.READY);
-            } else if (playerId.equals(room.getSecondPlayerId())) {
-                room.setSecondPlayerStatus(PlayerStatus.READY);
-            } else {
-                return ResponseEntity.badRequest().body("Invalid playerId for this room");
-            }
+            room.setFirstPlayerStatus(PlayerStatus.READY);
+        } else if (playerId.equals(room.getSecondPlayerId())) {
+            room.setSecondPlayerStatus(PlayerStatus.READY);
+        } else {
+            return ResponseEntity.badRequest().body("Invalid playerId for this room");
+        }
 
             // 両者READYなら roomStatus を READY に
-            if (room.getFirstPlayerStatus() == PlayerStatus.READY &&
-                room.getSecondPlayerStatus() == PlayerStatus.READY) {
-                room.setStatus(RoomStatus.READY);
-            }
+        if (room.getFirstPlayerStatus() == PlayerStatus.READY &&
+            room.getSecondPlayerStatus() == PlayerStatus.READY) {
+            room.setStatus(RoomStatus.READY);
+        }
 
-            roomRepository.save(room);
+        roomRepository.save(room);
 
-            return ResponseEntity.ok(Map.of(
-                "roomId", roomId,
-                "playerId", playerId,
-                "status", room.getStatus()
-            ));
+        return ResponseEntity.ok(Map.of(
+            "roomId", roomId,
+            "playerId", playerId,
+            "status", room.getStatus()
+        ));
         
     }
 }

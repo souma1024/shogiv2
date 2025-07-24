@@ -70,7 +70,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             case START_GAME_REQUEST -> {
                 StartGameRequest request = convert(payload, StartGameRequest.class);
                 StartGameResponse response = gameStartService.startGame(request);
-                send(session, WebSocketType.START_GAME_RESPONSE, response);
+                roomManager.broadcastToRoom(response.getRoomId(), new WebSocketMessage(WebSocketType.START_GAME_RESPONSE, response));
             }
             case MOVABLE_POSITION_REQUEST -> handleMovablePositionRequest(convert(payload, MovablePositionRequest.class), session);
             case MOVE_REQUEST -> handleMoveRequest(convert(payload, MoveRequest.class), session);
