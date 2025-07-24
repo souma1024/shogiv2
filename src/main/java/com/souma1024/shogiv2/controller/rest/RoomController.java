@@ -23,9 +23,11 @@ import com.souma1024.shogiv2.service.RoomService;
 public class RoomController {
     
     private final RoomService roomService;
+    private final RoomSessionManager roomManager;
 
-    public RoomController(RoomService roomService, RoomRepository roomRepository) {
+    public RoomController(RoomService roomService, RoomRepository roomRepository, RoomSessionManager roomManager) {
         this.roomService = roomService;
+        this.roomManager = roomManager;
     }
 
     @PostMapping("/rooms") 
@@ -44,7 +46,7 @@ public class RoomController {
         Room room = roomService.createRoom(timeLimit);
 
         CreateRoomResponse response = new CreateRoomResponse(room.getRoomId(), room.getFirstPlayerId(), timeLimit, room.getStatus(), "ルーム作成に成功しました");
-        RoomSessionManager.getInstance().canAddPlayer(response.getRoomId(), new Player(response.getPlayerId(), PlayerSide.SENTE));
+        roomManager.canAddPlayer(response.getRoomId(), new Player(response.getPlayerId(), PlayerSide.SENTE));
         return ResponseEntity.status(201).body(response);
     }
 
@@ -53,7 +55,7 @@ public class RoomController {
         try {
             JoinRoomResponse response = roomService.joinRoom(roomId);
             Player player = new Player(response.getPlayerId(), PlayerSide.GOTE); // or SENTE
-            RoomSessionManager.getInstance().canAddPlayer(roomId, player);
+            roomManager.canAddPlayer(roomId, player);
 
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {

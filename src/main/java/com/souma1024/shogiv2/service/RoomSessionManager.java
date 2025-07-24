@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.souma1024.shogiv2.domain.engine.ShogiEngine;
 import com.souma1024.shogiv2.domain.model.Player;
 import com.souma1024.shogiv2.dto.websocket.WebSocketMessage;
-import com.souma1024.shogiv2.entity.Room;
 
 import java.util.List;
 import java.util.Map;
@@ -12,10 +11,11 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketSession;
 
+@Component
 public class RoomSessionManager {
-    private static final RoomSessionManager instance = new RoomSessionManager();
 
     private final Map<String, List<WebSocketSession>> sessionMap = new ConcurrentHashMap<>();
     private final Map<String, ShogiEngine> engineMap = new ConcurrentHashMap<>();
@@ -23,10 +23,6 @@ public class RoomSessionManager {
     private final Set<String> startedRooms = ConcurrentHashMap.newKeySet();
 
     private RoomSessionManager() {}
-
-    public static RoomSessionManager getInstance() {
-        return instance;
-    }
 
     public boolean existsRoom(String roomId) {
         return playerMap.containsKey(roomId);

@@ -8,6 +8,6 @@ import lombok.Data;
 public abstract class ValidatableRequest {
     private String roomId;
     private String playerId;
-
+    
     public abstract boolean validate(GameContext context);
 }

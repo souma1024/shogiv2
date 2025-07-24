@@ -11,10 +11,16 @@ import com.souma1024.shogiv2.service.RoomSessionManager;
 
 @Controller
 public class GameController {
-    
+
+     private final RoomSessionManager roomManager;
+
+    // ★ コンストラクタで注入
+    public GameController(RoomSessionManager roomManager) {
+        this.roomManager = roomManager;
+    }
+
     @GetMapping("/games/{roomId}")
     public String showGamePage(@PathVariable String roomId, @RequestParam String playerId, Model model) {
-        RoomSessionManager roomManager = RoomSessionManager.getInstance();
         Player player = roomManager.getPlayerById(roomId, playerId);
 
         if (player == null) {
