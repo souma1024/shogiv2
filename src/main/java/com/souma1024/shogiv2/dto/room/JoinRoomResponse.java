@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Data
 @AllArgsConstructor
-public class JoinRoomResqponse {
+public class JoinRoomResponse {
     private String roomId;
     private String playerId;
     private int timeLimit;

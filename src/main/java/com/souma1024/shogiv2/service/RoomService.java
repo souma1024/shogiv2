@@ -9,7 +9,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import com.souma1024.shogiv2.dto.room.JoinRoomResqponse;
+import com.souma1024.shogiv2.dto.room.JoinRoomResponse;
 import com.souma1024.shogiv2.entity.Room;
 import com.souma1024.shogiv2.enums.common.PlayerStatus;
 import com.souma1024.shogiv2.enums.common.RoomStatus;
@@ -48,7 +48,7 @@ public class RoomService {
     }
 
     @Transactional
-    public JoinRoomResqponse joinRoom(String roomId) {
+    public JoinRoomResponse joinRoom(String roomId) {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("ルームが見つかりません"));
 
@@ -62,7 +62,7 @@ public class RoomService {
         room.setSecondPlayerStatus(PlayerStatus.READY);
         roomRepository.save(room);
 
-        return new JoinRoomResqponse(
+        return new JoinRoomResponse(
                 room.getRoomId(),
                 secondPlayerId,
                 room.getTimeLimit(),

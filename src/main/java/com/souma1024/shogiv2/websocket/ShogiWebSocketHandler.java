@@ -19,6 +19,7 @@ import com.souma1024.shogiv2.dto.gamestart.StartGameRequest;
 import com.souma1024.shogiv2.dto.gamestart.StartGameResponse;
 import com.souma1024.shogiv2.dto.websocket.WebSocketMessage;
 import com.souma1024.shogiv2.dto.websocket.common.ServerErrorEvent;
+import com.souma1024.shogiv2.dto.websocket.common.ValidatableRequest;
 import com.souma1024.shogiv2.dto.websocket.request.GameOverRequest;
 import com.souma1024.shogiv2.dto.websocket.request.MovablePositionRequest;
 import com.souma1024.shogiv2.dto.websocket.request.MoveRequest;
@@ -55,7 +56,6 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
             String typeString = root.get("type").asText();
             WebSocketType type = WebSocketType.fromValue(typeString);
             JsonNode payload = root.get("payload");
-
             dispatchMessage(session, type, payload);
         } catch (Exception e) {
             e.printStackTrace();

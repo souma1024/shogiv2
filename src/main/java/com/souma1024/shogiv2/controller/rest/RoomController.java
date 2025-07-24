@@ -11,7 +11,7 @@ import com.souma1024.shogiv2.common.errors.ErrorResponse;
 import com.souma1024.shogiv2.domain.model.Player;
 import com.souma1024.shogiv2.dto.room.CreateRoomRequest;
 import com.souma1024.shogiv2.dto.room.CreateRoomResponse;
-import com.souma1024.shogiv2.dto.room.JoinRoomResqponse;
+import com.souma1024.shogiv2.dto.room.JoinRoomResponse;
 import com.souma1024.shogiv2.entity.Room;
 import com.souma1024.shogiv2.enums.common.PlayerSide;
 import com.souma1024.shogiv2.repository.RoomRepository;
@@ -51,7 +51,7 @@ public class RoomController {
     @PostMapping("/rooms/{roomId}/join")
     public ResponseEntity<?> joinRoom(@PathVariable String roomId) {
         try {
-            JoinRoomResqponse response = roomService.joinRoom(roomId);
+            JoinRoomResponse response = roomService.joinRoom(roomId);
             Player player = new Player(response.getPlayerId(), PlayerSide.GOTE); // or SENTE
             RoomSessionManager.getInstance().canAddPlayer(roomId, player);
 
