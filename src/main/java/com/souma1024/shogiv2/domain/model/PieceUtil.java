@@ -71,18 +71,24 @@ public class PieceUtil {
     public static void applyMoveOnBoard(int[][] board, MoveRequest move) {
         int[] from = move.getFrom();
         int[] to = move.getTo();
-        int piece = move.getPiece();
-        boolean promote = move.isPromotion();
-
         if (from == null) {
-            board[to[1]][to[0]] = piece;
+            applyDrop(board, to[0], to[1], move.getPiece());
             return;
+        } else {
+            applyMove(board, from[0], from[1], to[0], to[1], move.isPromotion());
         }
+    }
 
-        int movingPiece = board[from[1]][from[0]];
-        if (promote) movingPiece = isSente(movingPiece) ? movingPiece + 100 : movingPiece - 100;
+    public static void applyDrop(int[][] board, int x, int y, int piece) {
+        board[y][x] = piece;
+    }
 
-        board[to[1]][to[0]] = movingPiece;
-        board[from[1]][from[0]] = 0;
+    public static void applyMove(int[][] board, int fromX, int fromY, int toX, int toY, boolean promote) {
+        int movingPiece = board[fromY][fromX];
+        if (promote) {
+            movingPiece = isSente(movingPiece) ? movingPiece + 100 : movingPiece - 100;
+        }
+        board[toY][toX] = movingPiece;
+        board[fromY][fromX] = 0;
     }
 }
