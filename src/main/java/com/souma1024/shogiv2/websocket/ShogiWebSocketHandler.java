@@ -1,6 +1,5 @@
 package com.souma1024.shogiv2.websocket;
 
-import java.util.List;
 
 import org.springframework.lang.NonNull;
 import org.springframework.web.socket.CloseStatus;
@@ -97,7 +96,7 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
     private void sendGameOver(String roomId, String winnerId, GameOverReason reason) throws Exception {
         GameOverResponse over = ResponseFactory.createGameOverResponse(roomId, winnerId, reason);
 
-        broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.GAME_OVER_RESPONSE, over));
+        roomManager.broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.GAME_OVER_RESPONSE, over));
     }
 
     private void handleGameOverRequest(GameOverRequest req, WebSocketSession session) throws Exception {
@@ -173,15 +172,6 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
         )));
     }
 
-    private void broadcastToRoom(String roomId, WebSocketMessage message) throws Exception {
-        String json = mapper.writeValueAsString(message);
-        List<WebSocketSession> sessions = roomManager.getSessions(roomId);
-        for (WebSocketSession s : sessions) {
-            if (s.isOpen()) {
-                s.sendMessage(new TextMessage(json));
-            }
-        }
-    }
 
     private void sendError(WebSocketSession session, String msg, int code) throws Exception {
         sendError(session, "unknown", msg, code);
