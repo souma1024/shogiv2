@@ -29,14 +29,6 @@ public class Piece {
     public static final int HISYA_SENTE = 7;
     public static final int HISYA_GOTE = -7;
 
-    // --- 馬（角の成り） ---
-    public static final int UMA_SENTE = 8;
-    public static final int UMA_GOTE = -8;
-
-    // --- 龍（飛の成り） ---
-    public static final int RYU_SENTE = 9;
-    public static final int RYU_GOTE = -9;
-
     // --- 王将・玉将（特別扱い） ---
     public static final int GYOKU_SENTE = 77; // 王
     public static final int GYOKU_GOTE = -77; // 玉
@@ -54,10 +46,17 @@ public class Piece {
     public static final int NARI_GI_SENTE = GIN_SENTE + 100;
     public static final int NARI_GI_GOTE = GIN_GOTE - 100;
 
+    // --- 馬（角の成り） ---
+    public static final int UMA_SENTE = KAKU_SENTE + 100;
+    public static final int UMA_GOTE = KAKU_GOTE - 100;
+
+    // --- 龍（飛の成り） ---
+    public static final int RYU_SENTE = HISYA_SENTE + 100;
+    public static final int RYU_GOTE = HISYA_GOTE - 100;
+
     // 金将は成らないので NARI_KI はなし
 
-    // 成り角 = 馬、成り飛 = 龍（すでに定義済み）
-
+    
     private Piece() {
         // インスタンス化禁止
     }
