@@ -23,11 +23,8 @@ import com.souma1024.shogiv2.dto.websocket.response.GameStateResponse;
 import com.souma1024.shogiv2.dto.websocket.response.MovablePositionResponse;
 import com.souma1024.shogiv2.dto.websocket.response.MoveResponse;
 import com.souma1024.shogiv2.dto.websocket.response.ReconnectResponse;
-import com.souma1024.shogiv2.entity.Room;
-import com.souma1024.shogiv2.enums.game.GameOverReason;
 import com.souma1024.shogiv2.enums.websocket.WebSocketType;
-import com.souma1024.shogiv2.factory.ResponseFactory;
-import com.souma1024.shogiv2.repository.RoomRepository;
+import com.souma1024.shogiv2.service.GameOverService;
 import com.souma1024.shogiv2.service.GameStartService;
 import com.souma1024.shogiv2.service.MovablePositionService;
 import com.souma1024.shogiv2.service.MoveService;
@@ -37,18 +34,18 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
 
     private final ObjectMapper mapper = new ObjectMapper();
     
-    private final RoomRepository roomRepository;
     private final GameStartService gameStartService;
     private final RoomSessionManager roomManager;
     private final MovablePositionService movablePositionService;
     private final MoveService moveService;
+    private final GameOverService gameOverService;
 
-    public ShogiWebSocketHandler(RoomRepository roomRepository, GameStartService gameStartService, RoomSessionManager roomManager, MovablePositionService movablePositionService, MoveService moveService) {
-        this.roomRepository = roomRepository;
+    public ShogiWebSocketHandler(GameStartService gameStartService, RoomSessionManager roomManager, MovablePositionService movablePositionService, MoveService moveService, GameOverService gameOverService) {
         this.gameStartService = gameStartService;
         this.roomManager = roomManager;
         this.movablePositionService = movablePositionService;
         this.moveService = moveService;
+        this.gameOverService = gameOverService;
     }
 
     @Override
@@ -83,7 +80,11 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
                 MoveResponse response = moveService.handleMove(request);
                 roomManager.broadcastToRoom(response.getRoomId(), new WebSocketMessage(WebSocketType.MOVE_RESPONSE, response));
             }
-            case GAME_OVER_REQUEST -> handleGameOverRequest(convert(payload, GameOverRequest.class), session);
+            case GAME_OVER_REQUEST -> {
+                GameOverRequest request = convert(payload, GameOverRequest.class);
+                GameOverResponse response = gameOverService.handleGameOver(request);
+                roomManager.broadcastToRoom(response.getRoomId(), new WebSocketMessage(WebSocketType.GAME_OVER_RESPONSE, response));
+            }
             case RECONNECT_REQUEST -> handleReconnectRequest(convert(payload, ReconnectRequest.class), session);
             default -> sendError(session, "未対応のtypeです: " + type, 1003);
         }
@@ -92,33 +93,6 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
     private <T> T convert(JsonNode payload, Class<T> clazz) throws Exception {
         return mapper.treeToValue(payload, clazz);
     }
-
-    private void sendGameOver(String roomId, String winnerId, GameOverReason reason) throws Exception {
-        GameOverResponse over = ResponseFactory.createGameOverResponse(roomId, winnerId, reason);
-
-        roomManager.broadcastToRoom(roomId, new WebSocketMessage(WebSocketType.GAME_OVER_RESPONSE, over));
-    }
-
-    private void handleGameOverRequest(GameOverRequest req, WebSocketSession session) throws Exception {
-        String roomId = req.getRoomId();
-        String loserId = req.getPlayerId();
-        String winnerId = getOpponentId(roomId, loserId); // 🔄 逆のプレイヤーIDを取得
-
-        sendGameOver(roomId, winnerId, req.getReason());
-        roomManager.removeRoom(roomId);
-    }
-
-    private String getOpponentId(String roomId, String playerId) {
-        Room room = roomRepository.findById(roomId).orElseThrow();
-        if (playerId.equals(room.getFirstPlayerId())) {
-            return room.getSecondPlayerId();
-        } else if (playerId.equals(room.getSecondPlayerId())) {
-            return room.getFirstPlayerId();
-        } else {
-            throw new IllegalArgumentException("プレイヤーがルームに存在しません");
-        }
-    }
-
 
     private void handleReconnectRequest(ReconnectRequest req, WebSocketSession session) throws Exception {
         String roomId = req.getRoomId();
