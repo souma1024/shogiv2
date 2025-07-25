@@ -9,7 +9,6 @@ import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.souma1024.shogiv2.domain.engine.ShogiEngine;
 import com.souma1024.shogiv2.dto.gamestart.StartGameRequest;
 import com.souma1024.shogiv2.dto.gamestart.StartGameResponse;
 import com.souma1024.shogiv2.dto.websocket.WebSocketMessage;
@@ -19,7 +18,6 @@ import com.souma1024.shogiv2.dto.websocket.request.MovablePositionRequest;
 import com.souma1024.shogiv2.dto.websocket.request.MoveRequest;
 import com.souma1024.shogiv2.dto.websocket.request.ReconnectRequest;
 import com.souma1024.shogiv2.dto.websocket.response.GameOverResponse;
-import com.souma1024.shogiv2.dto.websocket.response.GameStateResponse;
 import com.souma1024.shogiv2.dto.websocket.response.MovablePositionResponse;
 import com.souma1024.shogiv2.dto.websocket.response.MoveResponse;
 import com.souma1024.shogiv2.dto.websocket.response.ReconnectResponse;
@@ -28,6 +26,7 @@ import com.souma1024.shogiv2.service.GameOverService;
 import com.souma1024.shogiv2.service.GameStartService;
 import com.souma1024.shogiv2.service.MovablePositionService;
 import com.souma1024.shogiv2.service.MoveService;
+import com.souma1024.shogiv2.service.ReconnectService;
 import com.souma1024.shogiv2.service.RoomSessionManager;
 
 public class ShogiWebSocketHandler extends TextWebSocketHandler {
@@ -39,13 +38,15 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
     private final MovablePositionService movablePositionService;
     private final MoveService moveService;
     private final GameOverService gameOverService;
+    private final ReconnectService reconnectService;
 
-    public ShogiWebSocketHandler(GameStartService gameStartService, RoomSessionManager roomManager, MovablePositionService movablePositionService, MoveService moveService, GameOverService gameOverService) {
+    public ShogiWebSocketHandler(GameStartService gameStartService, RoomSessionManager roomManager, MovablePositionService movablePositionService, MoveService moveService, GameOverService gameOverService, ReconnectService reconnectService) {
         this.gameStartService = gameStartService;
         this.roomManager = roomManager;
         this.movablePositionService = movablePositionService;
         this.moveService = moveService;
         this.gameOverService = gameOverService;
+        this.reconnectService = reconnectService;
     }
 
     @Override
@@ -85,65 +86,17 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
                 GameOverResponse response = gameOverService.handleGameOver(request);
                 roomManager.broadcastToRoom(response.getRoomId(), new WebSocketMessage(WebSocketType.GAME_OVER_RESPONSE, response));
             }
-            case RECONNECT_REQUEST -> handleReconnectRequest(convert(payload, ReconnectRequest.class), session);
+            case RECONNECT_REQUEST -> {
+                ReconnectRequest request = convert(payload, ReconnectRequest.class);
+                ReconnectResponse response = reconnectService.handleReconnect(request);
+                roomManager.broadcastToRoom(response.getRoomId(), new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, response));
+            }
             default -> sendError(session, "未対応のtypeです: " + type, 1003);
         }
     }
 
     private <T> T convert(JsonNode payload, Class<T> clazz) throws Exception {
         return mapper.treeToValue(payload, clazz);
-    }
-
-    private void handleReconnectRequest(ReconnectRequest req, WebSocketSession session) throws Exception {
-        String roomId = req.getRoomId();
-        String playerId = req.getPlayerId();
-
-        System.out.println("🛠 reconnect_request: roomId = " + roomId + ", playerId = " + playerId);
-        if (!roomManager.existsRoom(roomId)) {
-            ReconnectResponse error = new ReconnectResponse();
-            error.setRoomId(roomId);
-            error.setSuccess(false);
-            error.setMessage("ルームが存在しません");
-
-            session.sendMessage(new TextMessage(mapper.writeValueAsString(
-                new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, error)
-            )));
-            return;
-        }
-
-        // ShogiEngine は対局開始後にのみ存在
-        ShogiEngine engine = roomManager.getEngine(roomId);
-        if (engine == null) {
-            ReconnectResponse pending = new ReconnectResponse();
-            pending.setRoomId(roomId);
-            pending.setSuccess(true);
-            pending.setMessage("対局はまだ開始していません");
-
-            session.sendMessage(new TextMessage(mapper.writeValueAsString(
-                new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, pending)
-            )));
-            return;
-        }
-
-        // 成功
-        ReconnectResponse ok = new ReconnectResponse();
-        ok.setRoomId(roomId);
-        ok.setSuccess(true);
-        ok.setMessage("再接続成功");
-
-        session.sendMessage(new TextMessage(mapper.writeValueAsString(
-            new WebSocketMessage(WebSocketType.RECONNECT_RESPONSE, ok)
-        )));
-
-        GameStateResponse state = new GameStateResponse();
-        state.setRoomId(roomId);
-        state.setBoard(engine.getBoard());
-        state.setCapturedPieces(engine.getCapturedPieces());
-        state.setCurrentPlayerId(engine.getCurrentPlayerId());
-
-        session.sendMessage(new TextMessage(mapper.writeValueAsString(
-            new WebSocketMessage(WebSocketType.GAME_STATE, state)
-        )));
     }
 
 

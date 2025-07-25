@@ -9,6 +9,7 @@ import com.souma1024.shogiv2.service.GameOverService;
 import com.souma1024.shogiv2.service.GameStartService;
 import com.souma1024.shogiv2.service.MovablePositionService;
 import com.souma1024.shogiv2.service.MoveService;
+import com.souma1024.shogiv2.service.ReconnectService;
 import com.souma1024.shogiv2.service.RoomSessionManager;
 import com.souma1024.shogiv2.websocket.ShogiWebSocketHandler;
 
@@ -21,6 +22,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
     private final MovablePositionService movablePositionService;
     private final MoveService moveService;
     private final GameOverService gameOverService;
+    private final ReconnectService reconnectService;
 
 
     WebSocketConfig(
@@ -28,17 +30,19 @@ public class WebSocketConfig implements WebSocketConfigurer {
      RoomSessionManager roomManager, 
      MovablePositionService movablePositionService, 
      MoveService moveService,
-     GameOverService gameOverService)
+     GameOverService gameOverService,
+     ReconnectService reconnectService)
       {
         this.gameStartService = gameStartService; 
         this.roomManager = roomManager;
         this.movablePositionService = movablePositionService;
         this.moveService = moveService;
         this.gameOverService = gameOverService;
+        this.reconnectService = reconnectService;
     }
     @Override
     public void registerWebSocketHandlers(@NonNull WebSocketHandlerRegistry registry) {
-        registry.addHandler(new ShogiWebSocketHandler(gameStartService, roomManager, movablePositionService, moveService, gameOverService), "/ws/shogi")
+        registry.addHandler(new ShogiWebSocketHandler(gameStartService, roomManager, movablePositionService, moveService, gameOverService, reconnectService), "/ws/shogi")
                 .setAllowedOrigins("*");
     }
 }
