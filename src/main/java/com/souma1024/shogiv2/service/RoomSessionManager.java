@@ -1,4 +1,4 @@
-package com.souma1024.shogiv2.websocket;
+package com.souma1024.shogiv2.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.souma1024.shogiv2.domain.engine.ShogiEngine;
@@ -9,23 +9,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.springframework.stereotype.Component;
+import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
-public class RoomManager {
-    private static final RoomManager instance = new RoomManager();
+@Component
+public class RoomSessionManager {
 
-    private final Map<String, List<WebSocketSession>> sessionMap = new ConcurrentHashMap<>();
+    private final Map<String, Map<String, WebSocketSession>> sessionMap = new ConcurrentHashMap<>();
     private final Map<String, ShogiEngine> engineMap = new ConcurrentHashMap<>();
     private final Map<String, Player[]> playerMap = new ConcurrentHashMap<>();
     private final Set<String> startedRooms = ConcurrentHashMap.newKeySet();
 
-    private RoomManager() {}
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
-    public static RoomManager getInstance() {
-        return instance;
-    }
+    private RoomSessionManager() {}
 
     public boolean existsRoom(String roomId) {
         return playerMap.containsKey(roomId);
@@ -66,17 +65,17 @@ public class RoomManager {
     }
 
     // セッションを追加
-    public void addSession(String roomId, WebSocketSession session) {
-        sessionMap.computeIfAbsent(roomId, k -> new CopyOnWriteArrayList<>()).add(session);
+    public void addSession(String roomId, String playerId, WebSocketSession session) {
+        sessionMap.computeIfAbsent(roomId, k -> new ConcurrentHashMap<>()).put(playerId, session);
     }
 
     // セッションを削除（全てのセッションが切れたらルーム削除）
-    public void removeSession(String roomId, WebSocketSession session) {
-        List<WebSocketSession> sessions = sessionMap.get(roomId);
-        if (sessions != null) {
-            sessions.remove(session);
-            System.out.println("🔌 WebSocket切断: " + session.getId() + " from room " + roomId);
-            if (sessions.isEmpty()) {
+    public void removeSession(String roomId, String playerId) {
+        Map<String, WebSocketSession> roomSessions = sessionMap.get(roomId);
+        if (roomSessions != null) {
+            roomSessions.remove(playerId);
+            System.out.println("🔌 WebSocket切断: " + playerId + " from room " + roomId);
+            if (roomSessions.isEmpty()) {
                 removeRoom(roomId);
                 System.out.println("🧹 ルーム削除: " + roomId + "（全セッション切断）");
             }
@@ -85,12 +84,22 @@ public class RoomManager {
 
     public void broadcastToRoom(String roomId, WebSocketMessage message) {
         List<WebSocketSession> sessions = getSessions(roomId);
-        ObjectMapper objectMapper = new ObjectMapper();
+        sendJsonToSessions(sessions, message);
+    }
+
+    public void sendToPlayer(String roomId, String playerId, WebSocketMessage message) {
+        WebSocketSession session = getSession(roomId, playerId);
+        if (session != null && session.isOpen()) {
+            sendJsonToSessions(List.of(session), message);
+        }
+    }
+
+    private void sendJsonToSessions(List<WebSocketSession> sessions, WebSocketMessage message) {
         try {
             String json = objectMapper.writeValueAsString(message);
             for (WebSocketSession session : sessions) {
                 if (session.isOpen()) {
-                    session.sendMessage(new org.springframework.web.socket.TextMessage(json));
+                    session.sendMessage(new TextMessage(json));
                 }
             }
         } catch (Exception e) {
@@ -100,8 +109,11 @@ public class RoomManager {
 
 
     public List<WebSocketSession> getSessions(String roomId) {
-        List<WebSocketSession> sessions = sessionMap.get(roomId);
-        return sessions == null ? List.of() : List.copyOf(sessions);
+        return List.copyOf(sessionMap.getOrDefault(roomId, Map.of()).values());
+    }
+
+    public WebSocketSession getSession(String roomId, String playerId) {
+        return sessionMap.getOrDefault(roomId, Map.of()).get(playerId);
     }
 
     // 対局開始

@@ -11,21 +11,23 @@ import com.souma1024.shogiv2.common.errors.ErrorResponse;
 import com.souma1024.shogiv2.domain.model.Player;
 import com.souma1024.shogiv2.dto.room.CreateRoomRequest;
 import com.souma1024.shogiv2.dto.room.CreateRoomResponse;
-import com.souma1024.shogiv2.dto.room.JoinRoomResqponse;
+import com.souma1024.shogiv2.dto.room.JoinRoomResponse;
 import com.souma1024.shogiv2.entity.Room;
 import com.souma1024.shogiv2.enums.common.PlayerSide;
 import com.souma1024.shogiv2.repository.RoomRepository;
+import com.souma1024.shogiv2.service.RoomSessionManager;
 import com.souma1024.shogiv2.service.RoomService;
-import com.souma1024.shogiv2.websocket.RoomManager;
 
 @RestController
 @RequestMapping("/api")
 public class RoomController {
     
     private final RoomService roomService;
+    private final RoomSessionManager roomManager;
 
-    public RoomController(RoomService roomService, RoomRepository roomRepository) {
+    public RoomController(RoomService roomService, RoomRepository roomRepository, RoomSessionManager roomManager) {
         this.roomService = roomService;
+        this.roomManager = roomManager;
     }
 
     @PostMapping("/rooms") 
@@ -44,16 +46,16 @@ public class RoomController {
         Room room = roomService.createRoom(timeLimit);
 
         CreateRoomResponse response = new CreateRoomResponse(room.getRoomId(), room.getFirstPlayerId(), timeLimit, room.getStatus(), "ルーム作成に成功しました");
-        RoomManager.getInstance().canAddPlayer(response.getRoomId(), new Player(response.getPlayerId(), PlayerSide.SENTE));
+        roomManager.canAddPlayer(response.getRoomId(), new Player(response.getPlayerId(), PlayerSide.SENTE));
         return ResponseEntity.status(201).body(response);
     }
 
     @PostMapping("/rooms/{roomId}/join")
     public ResponseEntity<?> joinRoom(@PathVariable String roomId) {
         try {
-            JoinRoomResqponse response = roomService.joinRoom(roomId);
+            JoinRoomResponse response = roomService.joinRoom(roomId);
             Player player = new Player(response.getPlayerId(), PlayerSide.GOTE); // or SENTE
-            RoomManager.getInstance().canAddPlayer(roomId, player);
+            roomManager.canAddPlayer(roomId, player);
 
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {

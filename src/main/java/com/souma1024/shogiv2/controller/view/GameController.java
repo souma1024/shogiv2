@@ -7,14 +7,20 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.souma1024.shogiv2.domain.model.Player;
-import com.souma1024.shogiv2.websocket.RoomManager;
+import com.souma1024.shogiv2.service.RoomSessionManager;
 
 @Controller
 public class GameController {
-    
+
+     private final RoomSessionManager roomManager;
+
+    // ★ コンストラクタで注入
+    public GameController(RoomSessionManager roomManager) {
+        this.roomManager = roomManager;
+    }
+
     @GetMapping("/games/{roomId}")
     public String showGamePage(@PathVariable String roomId, @RequestParam String playerId, Model model) {
-        RoomManager roomManager = RoomManager.getInstance();
         Player player = roomManager.getPlayerById(roomId, playerId);
 
         if (player == null) {

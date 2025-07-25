@@ -1,15 +1,11 @@
 package com.souma1024.shogiv2.service;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
-import java.util.HashSet;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import com.souma1024.shogiv2.dto.room.JoinRoomResqponse;
+import com.souma1024.shogiv2.dto.room.JoinRoomResponse;
 import com.souma1024.shogiv2.entity.Room;
 import com.souma1024.shogiv2.enums.common.PlayerStatus;
 import com.souma1024.shogiv2.enums.common.RoomStatus;
@@ -21,8 +17,6 @@ import jakarta.transaction.Transactional;
 public class RoomService {
 
     private final RoomRepository roomRepository;
-    private final Map<String, Set<String>> startRequests = new HashMap<>();
-
 
     public RoomService(RoomRepository roomRepository) {
         this.roomRepository = roomRepository;
@@ -32,7 +26,7 @@ public class RoomService {
         String roomId = generateRoomId();
         String firstPlayerId = generatePlayerId();
         RoomStatus status = RoomStatus.CREATED;
-        PlayerStatus playerStatus = PlayerStatus.READY;
+        PlayerStatus playerStatus = PlayerStatus.NOT_READY;
 
         Room room = new Room(
             roomId,
@@ -48,7 +42,7 @@ public class RoomService {
     }
 
     @Transactional
-    public JoinRoomResqponse joinRoom(String roomId) {
+    public JoinRoomResponse joinRoom(String roomId) {
         Room room = roomRepository.findById(roomId)
                 .orElseThrow(() -> new IllegalArgumentException("ルームが見つかりません"));
 
@@ -58,35 +52,17 @@ public class RoomService {
 
         String secondPlayerId = generatePlayerId(); // ランダム生成メソッド
         room.setSecondPlayerId(secondPlayerId);
-        room.setStatus(RoomStatus.READY);
-        room.setSecondPlayerStatus(PlayerStatus.READY);
+        room.setStatus(RoomStatus.WAITING);
+        room.setSecondPlayerStatus(PlayerStatus.NOT_READY);
         roomRepository.save(room);
 
-        return new JoinRoomResqponse(
+        return new JoinRoomResponse(
                 room.getRoomId(),
                 secondPlayerId,
                 room.getTimeLimit(),
                 room.getStatus(),
                 "ルームに参加できました"
         );
-    }
-
-
-    public String handleStartRequest(String roomId, String playerId) {
-        Room room = roomRepository.findById(roomId)
-            .orElseThrow(() -> new IllegalArgumentException("ルームが見つかりません"));
-
-        startRequests.putIfAbsent(roomId, new HashSet<>());
-        startRequests.get(roomId).add(playerId);
-
-        if (startRequests.get(roomId).contains(room.getFirstPlayerId()) &&
-            startRequests.get(roomId).contains(room.getSecondPlayerId())) {
-            room.setStatus(RoomStatus.ACTIVE); // RoomStatus.ACTIVE は "active" の状態を表す enum
-            roomRepository.save(room);
-            return "started";
-        }
-
-        return "waiting_for_opponent";
     }
 
     public String generateRoomId() {
