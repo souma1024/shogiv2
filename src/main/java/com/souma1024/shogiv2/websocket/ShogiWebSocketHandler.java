@@ -1,6 +1,8 @@
 package com.souma1024.shogiv2.websocket;
 
 
+import java.net.URI;
+
 import org.springframework.lang.NonNull;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -138,26 +140,42 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
     }
 
     private String extractRoomId(@NonNull WebSocketSession session) {
-        String query = session.getUri() != null ? session.getUri().getQuery() : null;
-        if (query != null) {
-            for (String param : query.split("&")) {
-                String[] kv = param.split("=");
-                if (kv.length == 2 && kv[0].equals("roomId")) {
-                    return kv[1];
-                }
+        URI uri = session.getUri();
+        if (uri == null) {
+            return null;
+        }
+        
+        String query = uri.getQuery();
+        if (query == null) {
+            return null;
+        }
+        
+        for (String param : query.split("&")) {
+            String[] kv = param.split("=");
+            if (kv.length == 2 && kv[0].equals("roomId")) {
+                return kv[1];
             }
         }
+        
         return null;
     }
 
     private String extractPlayerId(@NonNull WebSocketSession session) {
-        String query = session.getUri() != null ? session.getUri().getQuery() : null;
-        if (query != null) {
-            for (String param : query.split("&")) {
-                String[] kv = param.split("=");
-                if (kv.length == 2 && kv[0].equals("playerId")) {
-                    return kv[1];
-                }
+        URI uri = session.getUri();
+        if (uri == null) {
+            return null;
+        }
+
+        String query = uri.getQuery();
+
+        if (query == null) {
+            return null;
+        }
+   
+        for (String param : query.split("&")) {
+            String[] kv = param.split("=");
+            if (kv.length == 2 && kv[0].equals("playerId")) {
+                return kv[1];
             }
         }
         return null;
