@@ -1,6 +1,5 @@
 package com.souma1024.shogiv2.websocket;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.springframework.lang.NonNull;
@@ -13,7 +12,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.souma1024.shogiv2.domain.engine.ShogiEngine;
 import com.souma1024.shogiv2.domain.support.ApplyMoveResult;
-import com.souma1024.shogiv2.domain.support.MovableQuery;
 import com.souma1024.shogiv2.dto.gamestart.StartGameRequest;
 import com.souma1024.shogiv2.dto.gamestart.StartGameResponse;
 import com.souma1024.shogiv2.dto.websocket.WebSocketMessage;
@@ -28,12 +26,12 @@ import com.souma1024.shogiv2.dto.websocket.response.MovablePositionResponse;
 import com.souma1024.shogiv2.dto.websocket.response.MoveResponse;
 import com.souma1024.shogiv2.dto.websocket.response.ReconnectResponse;
 import com.souma1024.shogiv2.entity.Room;
-import com.souma1024.shogiv2.enums.common.PlayerSide;
 import com.souma1024.shogiv2.enums.game.GameOverReason;
 import com.souma1024.shogiv2.enums.websocket.WebSocketType;
 import com.souma1024.shogiv2.factory.ResponseFactory;
 import com.souma1024.shogiv2.repository.RoomRepository;
 import com.souma1024.shogiv2.service.GameStartService;
+import com.souma1024.shogiv2.service.MovablePositionService;
 import com.souma1024.shogiv2.service.RoomSessionManager;
 
 public class ShogiWebSocketHandler extends TextWebSocketHandler {
@@ -43,11 +41,13 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
     private final RoomRepository roomRepository;
     private final GameStartService gameStartService;
     private final RoomSessionManager roomManager;
+    private final MovablePositionService movablePositionService;
 
-    public ShogiWebSocketHandler(RoomRepository roomRepository, GameStartService gameStartService, RoomSessionManager roomManager) {
+    public ShogiWebSocketHandler(RoomRepository roomRepository, GameStartService gameStartService, RoomSessionManager roomManager, MovablePositionService movablePositionService) {
         this.roomRepository = roomRepository;
         this.gameStartService = gameStartService;
         this.roomManager = roomManager;
+        this.movablePositionService = movablePositionService;
     }
 
     @Override
@@ -72,7 +72,11 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
                 StartGameResponse response = gameStartService.startGame(request);
                 roomManager.broadcastToRoom(response.getRoomId(), new WebSocketMessage(WebSocketType.START_GAME_RESPONSE, response));
             }
-            case MOVABLE_POSITION_REQUEST -> handleMovablePositionRequest(convert(payload, MovablePositionRequest.class), session);
+            case MOVABLE_POSITION_REQUEST -> {
+                MovablePositionRequest request = convert(payload, MovablePositionRequest.class);
+                MovablePositionResponse response = movablePositionService.handleRequest(request);
+                roomManager.sendToPlayer(response.getRoomId(), response.getPlayerId(), new WebSocketMessage(WebSocketType.MOVABLE_POSITION_RESPONSE, response));
+            }
             case MOVE_REQUEST -> handleMoveRequest(convert(payload, MoveRequest.class), session);
             case GAME_OVER_REQUEST -> handleGameOverRequest(convert(payload, GameOverRequest.class), session);
             case RECONNECT_REQUEST -> handleReconnectRequest(convert(payload, ReconnectRequest.class), session);
@@ -83,67 +87,6 @@ public class ShogiWebSocketHandler extends TextWebSocketHandler {
     private <T> T convert(JsonNode payload, Class<T> clazz) throws Exception {
         return mapper.treeToValue(payload, clazz);
     }
-
-    private void handleMovablePositionRequest(MovablePositionRequest req, WebSocketSession session) throws Exception {
-        // 盤座標チェック
-        if (!isValidFrom(req.getFrom())) {
-            System.out.printf("❌ 無効なfrom座標: %s%n", Arrays.toString(req.getFrom()));
-            return;
-        }
-
-        // ShogiEngine を取得
-        ShogiEngine engine = roomManager.getEngine(req.getRoomId());
-        if (engine == null) {
-            System.out.printf("❌ ShogiEngineなし: roomId=%s%n", req.getRoomId());
-            return;
-        }
-
-        if (!isPlayersOwnPiece(req, engine)) {
-            System.out.println("❌ 他人の駒を操作しようとしました");
-            return;
-        }
-        MovableQuery query = buildMovableQuery(req, engine);
-        List<int[]> movable = (req.getFrom() != null)
-            ? engine.getMovablePositions(query)
-            : engine.getDropPositions(query);
-
-        sendMovableResponse(session, req.getRoomId(), req.getPlayerId(), req.getFrom(), req.getPiece(), movable);
-    }
-
-    private boolean isValidFrom(int[] from) {
-        return from == null || from.length == 2;
-    }
-
-    private boolean isPlayersOwnPiece(MovablePositionRequest req, ShogiEngine engine) {
-        String playerId = req.getPlayerId();
-        int piece = req.getPiece();
-        PlayerSide turn = engine.getTurnPlayer();
-        boolean isCurrentTurn = playerId.equals(engine.getCurrentPlayerId());
-
-        return isCurrentTurn && ((turn == PlayerSide.SENTE && piece > 0) || (turn == PlayerSide.GOTE && piece < 0));
-    }
-
-    private MovableQuery buildMovableQuery(MovablePositionRequest req, ShogiEngine engine) {
-        MovableQuery query = new MovableQuery();
-        query.setFrom(req.getFrom());
-        query.setPiece(req.getPiece());
-        query.setPlayerId(req.getPlayerId());
-        query.setPromotion(req.isPromotion());
-        query.setTurn(engine.getTurnPlayer());
-        return query;
-    }
-
-    private void sendMovableResponse(WebSocketSession session, String roomId, String playerId, int[] from, int piece, List<int[]> movable) throws Exception {
-        MovablePositionResponse response = ResponseFactory.createMovablePositionResponse(roomId, playerId, from, piece, movable);
-        
-        send(session, WebSocketType.MOVABLE_POSITION_RESPONSE, response);
-    }
-
-    private void send(WebSocketSession session, WebSocketType type, Object payload) throws Exception {
-        String json = mapper.writeValueAsString(new WebSocketMessage(type, payload));
-        session.sendMessage(new TextMessage(json));
-    }
-
 
     private void handleMoveRequest(MoveRequest req, WebSocketSession session) throws Exception {
         if (!validateMoveRequest(req, session)) return;
