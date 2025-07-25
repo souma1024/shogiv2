@@ -49,7 +49,7 @@ public class GameContext {
 
     /** ゲームが開始されているか？ */
     public boolean isGameStarted(String roomId) {
-        return roomSessionManager.isRoomReady(roomId);
+        return roomSessionManager.isRoomActive(roomId);
     }
 
     /** ShogiEngine を取得 */
