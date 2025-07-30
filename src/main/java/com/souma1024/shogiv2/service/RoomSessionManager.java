@@ -130,7 +130,7 @@ public class RoomSessionManager {
         return false;
     }
 
-    public boolean isRoomReady(String roomId) {
+    public boolean isRoomActive(String roomId) {
         return startedRooms.contains(roomId);
     }
 

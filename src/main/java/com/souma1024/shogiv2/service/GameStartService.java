@@ -36,7 +36,7 @@ public class GameStartService {
             room.getSecondPlayerStatus() != PlayerStatus.READY) {
             throw new ValidationException("プレイヤーが準備完了ではありません");
         }
-        if (roomManager.isRoomReady(req.getRoomId())) {
+        if (roomManager.isRoomActive(req.getRoomId())) {
             throw new ValidationException("すでにゲームが開始されています");
         }
     }

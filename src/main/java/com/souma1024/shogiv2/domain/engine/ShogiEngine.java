@@ -1,6 +1,5 @@
 package com.souma1024.shogiv2.domain.engine;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +13,7 @@ import com.souma1024.shogiv2.domain.support.MovableQuery;
 import com.souma1024.shogiv2.dto.websocket.common.CapturedPiece;
 import com.souma1024.shogiv2.dto.websocket.request.MoveRequest;
 import com.souma1024.shogiv2.enums.common.PlayerSide;
+import com.souma1024.shogiv2.domain.support.ShogiRuleEvaluator;
 
 public class ShogiEngine {
     private final int[][] board = new int[9][9];
@@ -21,6 +21,7 @@ public class ShogiEngine {
     private PlayerSide turn = PlayerSide.SENTE;
     private final String senteId;
     private final String goteId;
+    private final ShogiRuleEvaluator evaluator;
 
     public ShogiEngine(String senteId, String goteId) {
         this.senteId = senteId;
@@ -28,7 +29,11 @@ public class ShogiEngine {
         initializeBoard();
         capturedPieces.put(senteId, new int[7]); // 各要素は 0 で初期化される
         capturedPieces.put(goteId, new int[7]); // 各要素は 0 で初期化される
+        this.evaluator = new ShogiRuleEvaluator(this);
+    }
 
+    public ShogiRuleEvaluator getEvaluator() {
+        return evaluator;
     }
 
     private void initializeBoard() {
@@ -77,7 +82,7 @@ public class ShogiEngine {
             return new ApplyMoveResult(false, null);
         }
 
-        if (!isValidMove(move)) {
+        if (!evaluator.isValidMove(move)) {
             System.out.println("❌ 不正な手です");
             return new ApplyMoveResult(false, null);
         }
@@ -133,120 +138,26 @@ public class ShogiEngine {
         }
 
         // 手番交代
-        turn = (turn == PlayerSide.SENTE) ? PlayerSide.GOTE : PlayerSide.SENTE;
+        switchTurn();
         System.out.println("✅ 手番交代: 次は " + turn);
 
         return new ApplyMoveResult(true, capturedPiece);
-    }
-
-    private boolean isValidMove(MoveRequest move) {
-
-        int[] from = move.getFrom();
-        int[] to = move.getTo();
-        int piece = move.getPiece();
-        PlayerSide side = getTurnPlayer();
-
-        if (isSameOwner(to[0], to[1], side)) {
-            return false;
-        } 
-
-        if (from == null) {
-            // 盤面・持ち駒情報を使って合法打ち位置を列挙
-            int[] hand = capturedPieces.get(move.getPlayerId());
-            List<int[]> legalDrops = PieceUtil.getDropPositions(board, piece, side, hand);
-
-            boolean isLegal = legalDrops.stream()
-                .anyMatch(pos -> pos[0] == to[0] && pos[1] == to[1]);
-
-            if (!isLegal) {
-                System.out.println("❌ この位置には打てません");
-            }
-
-            return isLegal;
-        } 
-
-        // 打ち駒（二歩・打ち歩詰め）
-        if (PieceUtil.isNariForced(piece, to[1]) && !move.isPromotion()) {
-            System.out.println("❌ 成りが強制される場面で不成です");
-            return false;
-        }
-
-        if (PieceUtil.isSelfCheckAfterMove(board, move, side)) {
-            System.out.println("❌ 自玉が取られる手です");
-            return false;
-        }
-
-        List<int[]> movable = PieceUtil.getMovablePositions(board, from[0], from[1]);
-        List<MoveRequest> candidates = new ArrayList<>();
-
-        for (int[] target : movable) {
-            MoveRequest candidate = new MoveRequest();
-            candidate.setFrom(from);
-            candidate.setTo(target);
-            candidate.setPiece(piece);
-            candidate.setPromotion(move.isPromotion()); // 成りも含めて
-            candidate.setPlayerId(move.getPlayerId());
-            candidates.add(candidate);
-        }
-
-        List<MoveRequest> legalMoves = PieceUtil.getLegalMovesOnly(board, candidates, side);
-
-        boolean isLegal = legalMoves.stream()
-            .anyMatch(m -> Arrays.equals(m.getTo(), to));
-
-        if (!isLegal) {
-            System.out.println("❌ この移動は合法手ではありません");
-        }
-
-        return isLegal;
-    }
-
-    public List<int[]> getMovablePositions(MovableQuery query) {
-        int x = query.getFrom()[0];
-        int y = query.getFrom()[1];
-        int piece = query.getPiece();
-
-        List<int[]> rawMoves = PieceUtil.getMovablePositions(board, x, y);
-
-        List<MoveRequest> allCandidates = new ArrayList<>();
-
-        for (int[] move : rawMoves) {
-            MoveRequest m = new MoveRequest();
-            m.setFrom(new int[]{x, y});
-            m.setTo(move);
-            m.setPiece(piece);
-            m.setPromotion(false);
-            m.setPlayerId(query.getPlayerId());
-            allCandidates.add(m);
-        }
-
-        return PieceUtil.getLegalMovesOnly(board, allCandidates, turn)
-                        .stream()
-                        .map(MoveRequest::getTo)
-                        .toList();
-    }
-
-    public List<int[]> getDropPositions(MovableQuery query) {
-        int piece = query.getPiece();
-        String playerId = query.getPlayerId();
-        PlayerSide side = (playerId.equals(senteId)) ? PlayerSide.SENTE : PlayerSide.GOTE;
-
-        int[] handPieces = capturedPieces.get(playerId); // プレイヤーの持ち駒一覧
-
-        return PieceUtil.getDropPositions(board, piece, side, handPieces);
     }
 
     public boolean isSameOwner(int x, int y, PlayerSide side) {
         return (getPieceAt(x, y) > 0 && side == PlayerSide.SENTE) || (getPieceAt(x, y) < 0 && side == PlayerSide.GOTE);
     }
 
-    public boolean isCheckmate(PlayerSide playerSide) {
-        String playerId = (playerSide == PlayerSide.SENTE) ? senteId : goteId;
-        return PieceUtil.isCheckmate(board, playerSide, capturedPieces.get(playerId));
-    }
-
     public PlayerSide getTurnPlayer() {
         return turn;
+    }
+
+    public String getSenteId() {
+        return senteId;
+    }
+
+    public String getGoteId() {
+        return goteId;
     }
 
     public String getCurrentPlayerId() {
@@ -262,13 +173,7 @@ public class ShogiEngine {
     }
 
     public Map<String, int[]> getCapturedPieces() {
-        Map<String, int[]> copy = new HashMap<>();
-        for (Map.Entry<String, int[]> entry : capturedPieces.entrySet()) {
-            int[] original = entry.getValue();
-            int[] cloned = Arrays.copyOf(original, original.length); // 配列を複製
-            copy.put(entry.getKey(), cloned);
-        }
-        return copy;
+        return deepCopyCapturedPieces();
     }
 
     private int getPieceAt(int x, int y) {
@@ -277,6 +182,26 @@ public class ShogiEngine {
 
     private boolean isSame(MoveRequest request) {
         return Arrays.equals(request.getFrom(), request.getTo());
+    }
+
+    private void switchTurn() {
+        turn = (turn == PlayerSide.SENTE) ? PlayerSide.GOTE : PlayerSide.SENTE;
+    }
+
+    private Map<String, int[]> deepCopyCapturedPieces() {
+        Map<String, int[]> copy = new HashMap<>();
+        for (Map.Entry<String, int[]> entry : capturedPieces.entrySet()) {
+            copy.put(entry.getKey(), Arrays.copyOf(entry.getValue(), entry.getValue().length));
+        }
+        return copy;
+    }
+
+    public List<int[]> getMovablePositions(MovableQuery query) {
+        return evaluator.getMovablePositions(query);
+    }
+
+    public List<int[]> getDropPositions(MovableQuery query) {
+        return evaluator.getDropPositions(query);
     }
 
 }

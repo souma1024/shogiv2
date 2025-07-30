@@ -1,10 +1,6 @@
 package com.souma1024.shogiv2.domain.model;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.souma1024.shogiv2.dto.websocket.request.MoveRequest;
-import com.souma1024.shogiv2.enums.common.PlayerSide;
 
 public class PieceUtil {
     private PieceUtil() {
@@ -32,7 +28,7 @@ public class PieceUtil {
         return (p1 > 0 && p2 > 0) || (p1 < 0 && p2 < 0);
     }
 
-    private static boolean inBoard(int x, int y) {
+    public static boolean inBoard(int x, int y) {
         return x >= 0 && x < 9 && y >= 0 && y < 9;
     }
 
@@ -45,7 +41,6 @@ public class PieceUtil {
         };
     }
 
-    // --- 盤面操作 ---
     public static int[][] copyBoard(int[][] board) {
         int[][] newBoard = new int[9][9];
         for (int y = 0; y < 9; y++) {
@@ -54,6 +49,7 @@ public class PieceUtil {
         return newBoard;
     }
 
+    //成り強制
     public static boolean isNariForced(int piece, int toY) {
         int abs = Math.abs(toUnpromoted(piece));
         boolean isSente = isSente(piece);
@@ -68,176 +64,31 @@ public class PieceUtil {
         return false;
     }
 
-    public static boolean isNiFu(int[][] board, int x, PlayerSide side) {
-        int target = side == PlayerSide.SENTE ? 1 : -1;
-        for (int y = 0; y < 9; y++) {
-            int p = board[y][x];
-            if (p == target) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static boolean isUchiFuZume(int[][] board, int toX, int toY, PlayerSide side) {
-        // TODO: 実装が難しいため仮置き。将来的に詰将棋探索ロジック導入
-        return false;
-    }
-
-    // --- 王手・詰み関連 ---
-    public static boolean isSelfCheckAfterMove(int[][] board, MoveRequest move, PlayerSide playerSide) {
-        int[][] copy = copyBoard(board);
-        applyMoveOnBoard(copy, move);
-
-        int targetPiece = (playerSide == PlayerSide.SENTE) ? Piece.GYOKU_SENTE : Piece.GYOKU_GOTE;
-        int kingX = -1, kingY = -1;
-        for (int y = 0; y < 9; y++) {
-            for (int x = 0; x < 9; x++) {
-                if (copy[y][x] == targetPiece) {
-                    kingX = x;
-                    kingY = y;
-                }
-            }
-        }
-
-        return isSquareThreatenedByOpponent(copy, kingX, kingY, playerSide);
+    public static boolean isEmpty(int[][] board, int x, int y) {
+        return board[y][x] == 0;
     }
 
     public static void applyMoveOnBoard(int[][] board, MoveRequest move) {
         int[] from = move.getFrom();
         int[] to = move.getTo();
-        int piece = move.getPiece();
-        boolean promote = move.isPromotion();
-
-        int toX = to[0], toY = to[1];
-
-        // 打ち駒（持ち駒を盤面に置く） null ならば持ち駒を打つ
         if (from == null) {
-            if (board[toY][toX] == 0) {
-                board[toY][toX] = piece;
-            }
+            applyDrop(board, to[0], to[1], move.getPiece());
             return;
+        } else {
+            applyMove(board, from[0], from[1], to[0], to[1], move.isPromotion());
         }
+    }
 
-        int fromX = from[0], fromY = from[1];
+    public static void applyDrop(int[][] board, int x, int y, int piece) {
+        board[y][x] = piece;
+    }
+
+    public static void applyMove(int[][] board, int fromX, int fromY, int toX, int toY, boolean promote) {
         int movingPiece = board[fromY][fromX];
-
-        // 成りがある場合は、駒の値を変更
         if (promote) {
             movingPiece = isSente(movingPiece) ? movingPiece + 100 : movingPiece - 100;
         }
-
-        // 移動先に駒を置き、元の位置は空に
         board[toY][toX] = movingPiece;
         board[fromY][fromX] = 0;
-    }
-
-
-    public static boolean isSquareThreatenedByOpponent(int[][] board, int x, int y, PlayerSide self) {
-        for (int fromY = 0; fromY < 9; fromY++) {
-            for (int fromX = 0; fromX < 9; fromX++) {
-                int piece = board[fromY][fromX];
-                if (piece == 0) continue;
-
-                boolean isEnemy = (isSente(piece) && self == PlayerSide.GOTE) ||
-                                  (isGote(piece) && self == PlayerSide.SENTE);
-                if (!isEnemy) continue;
-
-                List<int[]> moves = getMovablePositions(board, fromX, fromY);
-                for (int[] move : moves) {
-                    if (move[0] == x && move[1] == y) return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public static boolean isCheckmate(int[][] board, PlayerSide side, int[] handPieces) {
-        // TODO: 実装済みのものを移植して統合
-        return false;
-    }
-
-    // --- 合法手フィルタリング ---
-    public static List<MoveRequest> getLegalMovesOnly(int[][] board, List<MoveRequest> candidates, PlayerSide side) {
-        List<MoveRequest> result = new ArrayList<>();
-        for (MoveRequest m : candidates) {
-            if (!isSelfCheckAfterMove(board, m, side)) {
-                result.add(m);
-            }
-        }
-        return result;
-    }
-
-    public static List<int[]> getMovablePositions(int[][] board, int x, int y) {
-        List<int[]> moves = new ArrayList<>();
-        int piece = board[y][x];
-        if (piece == 0) return moves;
-
-        boolean isSlide = isSlidePiece(piece);
-
-        int[][] directions = PieceMovement.getDirection(piece);
-
-        for (int[] dir : directions) {
-            int dx = dir[1];
-            int dy = dir[0];
-            int nx = x + dx;
-            int ny = y + dy;
-
-            while (inBoard(nx, ny)) {
-                int target = board[ny][nx];
-                if (target == 0 || !isSameSide(piece, target)) {
-                    moves.add(new int[] { nx, ny });
-                }
-
-                if (target != 0 || !isSlide) break;
-
-                nx += dx;
-                ny += dy;
-            }
-        }
-
-        return moves;
-    }
-
-    public static List<int[]> getDropPositions(int[][] board, int piece, PlayerSide side,  int[] handPieces) {
-        List<int[]> positions = new ArrayList<>();
-
-        for (int y = 0; y < 9; y++) {
-            for (int x = 0; x < 9; x++) {
-                if (board[y][x] != 0) continue; // 空いてないマスは打てない
-
-                if (!isEmpty(board, x, y)) continue;
-                if (!canDropAt(board, piece, x, y, side)) continue;
-
-                positions.add(new int[] { x, y });
-
-            }
-        }
-
-        return positions;
-    }
-
-    private static boolean canDropAt(int[][] board, int piece, int x, int y, PlayerSide side) {
-        // 二歩
-        if (Math.abs(piece) == 1 && isNiFu(board, x, side)) return false;
-
-        // 打ち歩詰め
-        if (Math.abs(piece) == 1 && isUchiFuZume(board, x, y, side)) return false;
-
-        // 桂馬の打ち制限
-        if (Math.abs(piece) == 3) {
-            if ((side == PlayerSide.SENTE && y <= 1) || (side == PlayerSide.GOTE && y >= 7)) return false;
-        }
-
-        // 歩・香の最下段制限
-        if (Math.abs(piece) == 1 || Math.abs(piece) == 2) {
-            if ((side == PlayerSide.SENTE && y == 0) || (side == PlayerSide.GOTE && y == 8)) return false;
-        }
-
-        return true;
-    }
-
-    private static boolean isEmpty(int[][] board, int x, int y) {
-        return board[y][x] == 0;
     }
 }

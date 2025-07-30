@@ -19,7 +19,7 @@ public class MoveService {
 
     public MoveResponse handleMove(MoveRequest req) {
         // ルーム状態チェック
-        if (!roomManager.isRoomReady(req.getRoomId())) {
+        if (!roomManager.isRoomActive(req.getRoomId())) {
             throw new IllegalStateException("ルームが開始されていません");
         }
         if (roomManager.getPlayerById(req.getRoomId(), req.getPlayerId()) == null) {
